@@ -5,7 +5,7 @@ return function(Posix_File_System)
       MAX_SIZE_READED_IN_MEMORY = 50 * 1024 * 1024, -- 50 MiB
    }
 
-   local sha1 = require "sha1"
+   local sha1 = require "build.third-party.mpeterv-sha1"
 
    function M.create(fs)
       return fs
