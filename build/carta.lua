@@ -1,0 +1,81 @@
+local M = {}
+
+-- newtype Task c k v = Task { run :: forall f. c f => (k -> f v) -> f v }
+--                                                     ^^^^^^^^^^    ^^^
+--                                                          |         |
+--                                 How to build it's dependencies     |
+--                                                                    |
+--                                                           The output
+-- type Tasks c k v = k -> Maybe (Task c k v)
+--                         ^^^^^
+--                           |
+--      Either can build a given output of not
+--
+--
+-- The Lua types are:
+--
+-- type Task(k, v) = function(fetch : function(k) return v) return v
+-- type Tasks(k, v) = function(target : k) return Task(k, v)
+--
+-- For example:
+--
+--   function sprsh1(target)
+--      if target == "B1" then
+--         return function(fetch)
+--            return fetch "A1" + fetch "A2"
+--         end
+--      elseif target == "B2" then
+--         return function(fetch)
+--            return fetch "B1" * 2
+--         end
+--      else
+--         return nil
+--      end
+--   end
+
+-- type Build c i k v = Tasks c k v -> k -> Store i k v -> Store i k v
+-- Means:
+-- 
+--    Give me the instructions of how to update any target (`Tasks`), the
+--    desired target to update (`k`) and the current state of the store
+--    (`Store`) and I will give you the updated store (`Store`).
+--
+-- The Lua type is:
+--
+-- type Build(i, k, v) = function(tasks : Tasks(k, v), key : k, store : Store(i, k, v)) return nil
+--
+-- And modifies `store` imperatively.
+--
+-- For example:
+--   function busy(tasks, key, store)
+--      local function fetch(target)
+--         local task = tasks(target)
+--         if not task then
+--            return store.get(target)
+--         else
+--            local res = task(fetch)
+--            store.put(target, res)
+--            return res
+--         end
+--      end
+--      return fetch(key)
+--   end
+
+-- type Scheduler c i ir k v = Rebuilder c ir k v -> Build c i k v
+-- type Rebuilder c ir k v = k -> v -> Task c k v -> Task (MonadState ir) k v
+--
+-- Scheduler takes a Rebuilder and constructs a Build system, choosing the
+-- order in which keys will be built.
+--
+-- A Rebuilder takes a key, it's current value and the task that can rebuild it
+-- and returns a new task that remembers (via `ir`) if is up-to-date or not and
+-- rebuilds the key only if necessary.
+--
+-- In Lua:
+--
+-- type Scheduler(i, k, v) = function(rb : Rebuilder(k, v)) return Build(i, k, v)
+-- type Rebuilder(k, v) = function(key : k, value : v, task : Task(k, v)) return Task(k, v)
+
+
+
+return M
