@@ -136,7 +136,6 @@ return function(Store)
                error(string.format("Dependency %s of %s was unlisted", dep_key, key))
             end
 
-            print("@", key)
             local task = tasks(key)
             local topotask = create_topological_task(tasks, task, key)
             local new_task = rebuilder(key, value, topotask)

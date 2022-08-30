@@ -9,7 +9,6 @@ return function(Posix_File_System)
 
    function M.hash(fs, key, value)
       local mtime = Posix_File_System.get_mtime(fs, key)
-      print("MTIME", key, mtime)
       return mtime or M.FILE_DOESNT_EXISTS
    end
 

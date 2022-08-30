@@ -31,7 +31,6 @@ return function(Posix_File_System)
 
    function M.hash(fs, key, value)
       local res = read_hash(fs, key)
-      print("SHA1", key, res)
       return res or M.FILE_DOESNT_EXISTS
    end
 

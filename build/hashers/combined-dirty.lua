@@ -20,13 +20,10 @@ return function(...)
 
    function M:hash_dirty(key, old_hash, new_hash)
       for i = 1, self.n do
-         print("AT", i)
          if Modules[i].hash_dirty(self[i], key, old_hash[i], new_hash[i]) then
-            print("S")
             return true
          end
       end
-      print("E")
       return false
    end
 
