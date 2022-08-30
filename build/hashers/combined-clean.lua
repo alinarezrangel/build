@@ -3,9 +3,9 @@ return function(...)
 
    local Modules = {...}
 
-   function M.create_combined_hashers(first, ...)
-      assert(first ~= nil)
-      local myself = table.pack {first, ...}
+   function M.create_combined_hashers(...)
+      local myself = {...}
+      myself.n = select("#", ...)
       assert(myself.n == #Modules)
       return myself
    end
@@ -21,13 +21,13 @@ return function(...)
    function M:hash_dirty(key, old_hash, new_hash)
       for i = 1, self.n do
          print("AT", i)
-         if Modules[i].hash_dirty(self[i], key, old_hash, new_hash) then
+         if not Modules[i].hash_dirty(self[i], key, old_hash[i], new_hash[i]) then
             print("S")
-            return true
+            return false
          end
       end
       print("E")
-      return false
+      return true
    end
 
    return M
