@@ -47,7 +47,7 @@ return function(Store)
 
       local flattened_deps = flatten_deps()
       local function lt(a, b)
-         return a.depth < b.depth
+         return a.depth > b.depth
       end
       table.sort(flattened_deps, lt)
       for i = 1, flattened_deps.n do
