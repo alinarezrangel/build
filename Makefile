@@ -30,10 +30,14 @@ $(OUTPUTS)/docs/main.css $(OUTPUTS)/docs/mkmain.css
 .PHONY: all
 all: TAGS docs
 
-docs: $(PAGES)
+docs: $(PAGES) $(OUTPUTS)/docs.zip
 
 TAGS: $(LUA_FILES)
 	etags -l lua -o $@ $(LUA_FILES)
+
+$(OUTPUTS)/docs.zip: $(PAGES)
+	rm $@ || true
+	zip -r $@ $^
 
 $(OUTPUTS)/docs/%.html: docs/%.html
 	cp $< $@
