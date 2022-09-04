@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="$lang$" xml:lang="$lang$"$if(dir)$ dir="$dir$"$endif$>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="generator" content="pandoc" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+        $for(author-meta)$
+        <meta name="author" content="$author-meta$" />
+        $endfor$
+        $if(date-meta)$
+        <meta name="dcterms.date" content="$date-meta$" />
+        $endif$
+        $if(keywords)$
+        <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
+        $endif$
+        $if(description-meta)$
+        <meta name="description" content="$description-meta$" />
+        $endif$
+        <title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
+        <style>
+         $styles.html()$
+        </style>
+        $for(css)$
+        <link rel="stylesheet" href="$css$" />
+        $endfor$
+        $for(header-includes)$
+        $header-includes$
+        $endfor$
+        $if(math)$
+        $math$
+        $endif$
+        <!--[if lt IE 9]>
+            <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+        <![endif]-->
+    </head>
+    <body>
+        $for(include-before)$
+        $include-before$
+        $endfor$
+        $if(title)$
+        <header id="title-block-header">
+            <h1 class="title">$title$</h1>
+            $if(subtitle)$
+            <p class="subtitle">$subtitle$</p>
+            $endif$
+            $for(author)$
+            <p class="author">$author$</p>
+            $endfor$
+            $if(date)$
+            <p class="date">$date$</p>
+            $endif$
+            $if(abstract)$
+            <div class="abstract">
+                <div class="abstract-title">$abstract-title$</div>
+                $abstract$
+            </div>
+            $endif$
+        </header>
+        $endif$
+        <nav class="navbar">
+            <ul class="mainnav">
+                <li>Pages:</li>
+                <li><a href="index.html">Index</a></li>
+                <li><a href="install.html">Install</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/releases">Releases</a></li>
+                <li><a href="README.html">Documentation</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/issues">Bug Tracker</a></li>
+                <li><a href="https://github.com/alinarezrangel/build">GitHub</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/blob/master/LICENSE">License</a></li>
+            </ul>
+            $if(toolbar)$
+            <ul class="subnav">
+                <li>Tools:</li>
+                <li><a href="make.html"><code>build.make</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.ninja</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.redo</code></a></li>
+            </ul>
+            $endif$
+            $if(libbar)$
+            <ul class="subnav">
+                <li>Library:</li>
+                <li><a href="#" class="todo-link"><code>build.schedulers</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.rebuilders</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.hashers</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.traces.verifying</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.stores</code></a></li>
+            </ul>
+            $endif$
+        </nav>
+        $if(no-toc)$
+        $else$
+        $if(toc)$
+        <nav id="$idprefix$TOC" role="doc-toc" class="toc">
+            $if(toc-title)$
+            <h2 class="toc-title" id="$idprefix$toc-title">$toc-title$</h2>
+            $else$
+            <h2 class="toc-title" id="$idprefix$toc-title">Table of contents</h2>
+            $endif$
+            $table-of-contents$
+        </nav>
+        $endif$
+        $endif$
+        <main class="main-content">
+$body$
+        </main>
+        <footer class="footer">
+            <ul>
+                <li><a href="index.html">Go back to the index</a></li>
+                <li><a href="README.html">Documentation</a></li>
+                <li><a href="install.html">Install</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/releases">Releases</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/issues">Bug Tracker</a></li>
+                <li><a href="https://github.com/alinarezrangel/build">GitHub</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/blob/master/LICENSE">License</a></li>
+            </ul>
+            <ul>
+                <li><a href="make.html"><code>build.make</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.ninja</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.redo</code></a></li>
+            </ul>
+            <ul>
+                <li><a href="#" class="todo-link"><code>build.schedulers</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.rebuilders</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.hashers</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.traces.verifying</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.stores</code></a></li>
+            </ul>
+        </footer>
+        $for(include-after)$
+        $include-after$
+        $endfor$
+    </body>
+</html>

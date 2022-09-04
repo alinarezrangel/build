@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>The build.lua build system</title>
+        <link rel="stylesheet" href="main.css" type="text/css" />
+    </head>
+    <body>
+        <header>
+            <h1>The <code>build.lua</code> build system</h1>
+        </header>
+        <nav>
+            <ul class="mainnav">
+                <li>Pages:</li>
+                <li><a href="install.html">Install</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/releases">Releases</a></li>
+                <li><a href="README.html">Documentation</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/issues">Bug Tracker</a></li>
+                <li><a href="https://github.com/alinarezrangel/build">GitHub</a></li>
+                <li><a href="https://github.com/alinarezrangel/build/blob/master/LICENSE">License</a></li>
+            </ul>
+            <ul class="subnav">
+                <li>Tools:</li>
+                <li><a href="make.html"><code>build.make</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.ninja</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.redo</code></a></li>
+            </ul>
+            <ul class="subnav">
+                <li>Library:</li>
+                <li><a href="#" class="todo-link"><code>build.schedulers</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.rebuilders</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.hashers</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.traces.verifying</code></a></li>
+                <li><a href="#" class="todo-link"><code>build.stores</code></a></li>
+            </ul>
+        </nav>
+        <main>
+            <p class="eye-catching">
+                The <code>build.lua</code> build system provides an entire
+                family of build systems implemented almost entirely in Lua
+                5.4. Inspired by the amazing <a href="https://www.microsoft.com/en-us/research/publication/build-systems-la-carte/">Build
+                Systems a la Carte</a> by Andrey Mokhov, Neil Mitchell and
+                Simon Peyton Jones, this small Lua library implements (and
+                allows you to implement) a multitude of otherwise completely
+                separate tools.
+            </p>
+            <p>
+                See the included <a href="make.html"><code>make</code></a> inspired
+                tool.
+            </p>
+            <h2>A build system library</h2>
+            <p>
+                This is a library for building build systems. Right now I only
+                provide a prebuilt implementation of <a href="make.html">make</a>,
+                but I plan on adding implementations of
+                <a href="https://ninja-build.org/">ninja</a> and
+                <a href="https://github.com/apenwarr/redo">redo</a> inspired
+                tools.
+            </p>
+            <p>
+                You can build your own systems on top of this. It implements
+                the architecture of the mentioned paper and you can even mix
+                and match parts from different build systems. For example,
+                mixing make's topological scheduler with
+                <a href="https://apenwarr.ca/log/20181113">Apenwarr's rebuilder</a>.
+                Or write a <a href="https://shakebuild.com">Shake-like</a> DSL
+                (but using Lua) and swap between different "hashers" for
+                checking when a file is up to date (do you want early stopping
+                via a SHA1 hash? or just check mtimes like make? or maybe a mix
+                of the two?).
+            </p>
+            <table>
+                <caption>Implemented schedulers and rebuilders</caption>
+                <thead>
+                    <tr>
+                        <td></td>
+                        <th>Topological</th>
+                        <th>Restarting</th>
+                        <th>Suspending</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Modification time</th>
+                        <td>Yes</td>
+                        <td>No</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <th>Verifying Traces</th>
+                        <td>Yes</td>
+                        <td>No</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <th>Constructive Traces</th>
+                        <td>No</td>
+                        <td>No</td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <th>Deep Constructive Traces</th>
+                        <td>No</td>
+                        <td>No</td>
+                        <td>No</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>I still need to implement:</p>
+            <ul>
+                <li>The restarting scheduler.</li>
+                <li>Constructive traces.</li>
+                <li>Deep constructive traces.</li>
+            </ul>
+        </main>
+    </body>
+</html>

@@ -1,3 +1,7 @@
+---
+title: Installation guide
+---
+
 # How to install `build.lua` #
 
 ## Dependencies ##

@@ -1,0 +1,89 @@
+html {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+
+    max-width: 50rem;
+    margin: auto;
+    padding: 0 16px;
+
+    height: 100%;
+}
+
+.main-content {
+    flex-grow: 1;
+}
+
+.toc, footer {
+    background-color: #efefef;
+    color: black;
+}
+
+footer {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: stretch;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.navbar > ul {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-start;
+    list-style: none;
+    margin: 8px 4px;
+    padding: 0;
+}
+
+.navbar > ul > li {
+    margin: 4px 0;
+}
+
+.navbar > ul > li > a {
+    padding: 8px 16px;
+}
+
+.navbar > ul + ul {
+    margin-top: 24px;
+}
+
+.eye-catching {
+    font-size: 1.3em;
+    background-color: #eee;
+    color: black;
+    padding: 8px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 4px 8px;
+}
+
+table > tbody > tr > th:first-child, table > tr > th:first-child {
+    text-align: right;
+}
+
+tr:nth-child(2n) {
+    background-color: #eee;
+    color: black;
+}
+
+.todo-link {
+    color: red;
+}

@@ -1,4 +1,8 @@
 LUA = lua5.4
+PANDOC = pandoc
+
+PANDOC_FLAGS = --lua-filter docs/pandoc-filter.lua --toc --css mkmain.css	\
+--template docs/template.html
 
 OUTPUTS = outputs
 
@@ -17,8 +21,26 @@ build/traces/init.lua build/traces/verifying/init.lua					\
 build/traces/verifying/hash.lua build/colors.lua build/getopt.lua		\
 build/init.lua build/utils.lua build/programs/make.lua
 
+DOCS = docs/README.md docs/install.md docs/make.md
+
+PAGES = $(OUTPUTS)/docs/index.html $(OUTPUTS)/docs/README.html	\
+$(OUTPUTS)/docs/install.html $(OUTPUTS)/docs/make.html			\
+$(OUTPUTS)/docs/main.css $(OUTPUTS)/docs/mkmain.css
+
 .PHONY: all
-all: TAGS
+all: TAGS docs
+
+docs: $(PAGES)
 
 TAGS: $(LUA_FILES)
 	etags -l lua -o $@ $(LUA_FILES)
+
+$(OUTPUTS)/docs/%.html: docs/%.html
+	cp $< $@
+
+$(OUTPUTS)/docs/%.css: docs/%.css
+	cp $< $@
+
+$(OUTPUTS)/docs/%.html: docs/%.md docs/template.html docs/pandoc-filter.lua
+	mkdir -p $(OUTPUTS)/docs
+	$(PANDOC) $(PANDOC_FLAGS) -f markdown -t html --output $@ $<

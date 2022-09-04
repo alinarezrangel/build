@@ -1,3 +1,8 @@
+---
+title: The build.make tool
+toolbar: yes
+---
+
 # `build.make` -- The make-like clone of `build.lua` #
 
 The `build.lua` library comes with a clone of the classic `make` program called
