@@ -1,8 +1,5 @@
 local M = {}
 
-require "fennel"
-local V = require "fennel.view"
-
 local utils = require "build.utils"
 
 local function pos_to_srcloc(src, i)
