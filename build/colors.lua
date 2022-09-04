@@ -37,6 +37,8 @@ M.STYLES = {
    bold = M.bold,
 }
 
+M.PATTERN = "%[([a-zA-Z0-9]*):([a-zA-Z0-9]*)%]"
+
 function M.format(fmt, ...)
    local function replace(style, name)
       if style == "" then
@@ -52,7 +54,7 @@ function M.format(fmt, ...)
          error("could not recognize color: " .. name)
       end
    end
-   local escaped = string.gsub(fmt, "%[([a-zA-Z0-9]*):([a-zA-Z0-9]*)%]", replace)
+   local escaped = string.gsub(fmt, M.PATTERN, replace)
    return string.format(escaped, ...)
 end
 
