@@ -22,8 +22,3 @@ all: TAGS
 
 TAGS: $(LUA_FILES)
 	etags -l lua -o $@ $(LUA_FILES)
-
-$(OUTPUTS)/build.make: build/programs/make.lua
-	echo '#!/usr/bin/env $(LUA)' > $@
-	cat $< > $@
-	chmod +x $@
