@@ -39,6 +39,9 @@ function M:run_wait(program, args)
       cpid, errmsg, errno = wait.wait(pid)
       if not cpid then
          error("could not wait: " .. errmsg)
+      else
+         -- errno is the exit code
+         return errno
       end
    end
 end
