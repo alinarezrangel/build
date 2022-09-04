@@ -58,4 +58,25 @@ function M.graphviz_string_escape(str)
    return (string.gsub(str, "([^a-zA-Z0-9 _])", escape))
 end
 
+function M.is_prefix(str, prefix)
+   return string.len(str) >= string.len(prefix)
+      and string.sub(str, 1, string.len(prefix)) == prefix
+end
+
+function M.remove_duplicates(values)
+   local seen = {}
+   local new = {}
+   for i = 1, #values do
+      if not seen[values[i]] then
+         new[#new + 1] = values[i]
+      end
+      seen[values[i]] = true
+   end
+   return new
+end
+
+function M.chomp_end(str)
+   return (string.match(str, "^(.-)\n$")) or str
+end
+
 return M
