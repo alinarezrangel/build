@@ -633,17 +633,25 @@ function M.eval_components(components, env, pattern)
    local res = {}
    for i = 1, #components do
       local comp = components[i]
+      local acc = {""}
       for j = 1, #comp.parts do
          local part = comp.parts[j]
          local is_scalar, val = M.eval_part(part, env, pattern)
          if not is_scalar then
-            for k = 1, #val do
-               res[#res + 1] = val[k]
+            local mult = {}
+            for k = 1, #acc do
+               for q = 1, #val do
+                  mult[#mult + 1] = acc[k] .. val[q]
+               end
             end
+            acc = mult
          else
-            res[#res + 1] = val
+            for k = 1, #acc do
+               acc[k] = acc[k] .. val
+            end
          end
       end
+      res[#res + 1] = table.concat(acc)
    end
    return res
 end
