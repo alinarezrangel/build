@@ -7,4 +7,4 @@ no-toc: yes
 
 - [How to install `build.lua`](install.md).
 - [`build.make` -- The make-like clone of `build.lua`](make.md).
-- [Internals of `build.lua`](internals.md) -- TODO.
+- [Internals of `build.lua`](internals.md).

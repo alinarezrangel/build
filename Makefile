@@ -21,11 +21,19 @@ build/traces/init.lua build/traces/verifying/init.lua					\
 build/traces/verifying/hash.lua build/colors.lua build/getopt.lua		\
 build/init.lua build/utils.lua build/programs/make.lua
 
-DOCS = docs/README.md docs/install.md docs/make.md
-
-PAGES = $(OUTPUTS)/docs/index.html $(OUTPUTS)/docs/README.html	\
-$(OUTPUTS)/docs/install.html $(OUTPUTS)/docs/make.html			\
-$(OUTPUTS)/docs/main.css $(OUTPUTS)/docs/mkmain.css
+PAGES = $(OUTPUTS)/docs/index.html $(OUTPUTS)/docs/main.css						\
+$(OUTPUTS)/docs/mkmain.css $(OUTPUTS)/docs/README.html							\
+$(OUTPUTS)/docs/install.html $(OUTPUTS)/docs/make.html							\
+$(OUTPUTS)/docs/internals.html $(OUTPUTS)/docs/stores-table.html				\
+$(OUTPUTS)/docs/stores-json.html $(OUTPUTS)/docs/schedulers-suspending.html		\
+$(OUTPUTS)/docs/schedulers-topological.html										\
+$(OUTPUTS)/docs/rebuilders-mtime.html											\
+$(OUTPUTS)/docs/rebuilders-verifying-traces.html								\
+$(OUTPUTS)/docs/rebuilders-dirty-bit.html										\
+$(OUTPUTS)/docs/traces-verifying-hash.html $(OUTPUTS)/docs/hashers-mtime.html	\
+$(OUTPUTS)/docs/hashers-sha1.html $(OUTPUTS)/docs/hashers-apenwarr.html			\
+$(OUTPUTS)/docs/hashers-combined-clean.html										\
+$(OUTPUTS)/docs/hashers-combined-dirty.html
 
 .PHONY: all
 all: TAGS docs
