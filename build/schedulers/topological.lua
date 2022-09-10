@@ -11,27 +11,31 @@ return function(Store)
 
    function M.METHODS:all_dependencies_in_topological_order(key)
       local deps = {}
+      local deps_to_depths = {}
       local seen = {}
 
       local function visit(key, depth)
-         if seen[key] then
-            return
-         end
-         seen[key] = true
-         local deps_keys = self:dependencies_of(key)
-         local same_depth_deps = deps[depth]
-         if not same_depth_deps then
-            same_depth_deps = {n = 0}
-            deps[depth] = same_depth_deps
-         end
-         same_depth_deps.n = same_depth_deps.n + 1
-         same_depth_deps[same_depth_deps.n] = key
-         for i = 1, #deps_keys do
-            visit(deps_keys[i], depth + 1)
+         deps_to_depths[key] = math.max(deps_to_depths[key] or -1, depth)
+         if not seen[key] then
+            seen[key] = true
+            local deps_keys = self:dependencies_of(key)
+            for i = 1, #deps_keys do
+               visit(deps_keys[i], depth + 1)
+            end
          end
       end
 
       visit(key, 1)
+
+      local function linearize()
+         for key, depth in pairs(deps_to_depths) do
+            deps[depth] = deps[depth] or {n = 0}
+            local t = deps[depth]
+            t.n = t.n + 1
+            t[t.n] = key
+         end
+      end
+      linearize()
 
       local function flatten_deps()
          local res = {n = 0}
