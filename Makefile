@@ -47,12 +47,12 @@ $(OUTPUTS)/docs.zip: $(PAGES)
 	rm $@ || true
 	zip -r $@ $^
 
-$(OUTPUTS)/docs/%.html: docs/%.html
-	cp $< $@
-
 $(OUTPUTS)/docs/%.css: docs/%.css
 	cp $< $@
 
 $(OUTPUTS)/docs/%.html: docs/%.md docs/template.html docs/pandoc-filter.lua
 	mkdir -p $(OUTPUTS)/docs
 	$(PANDOC) $(PANDOC_FLAGS) -f markdown -t html --output $@ $<
+
+$(OUTPUTS)/docs/index.html: docs/index.html
+	cp $< $@
