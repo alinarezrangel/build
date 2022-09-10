@@ -1,5 +1,6 @@
 local M = {}
 
+local stdio = require "posix.stdio"
 local unistd = require "posix.unistd"
 local poll = require "posix.poll"
 local stat = require "posix.sys.stat"
@@ -7,6 +8,20 @@ local time = require "posix.sys.time"
 local wait = require "posix.sys.wait"
 
 function M.global()
+end
+
+function M:change_current_directory(path)
+   unistd.chdir(path)
+end
+
+function M:is_a_terminal(handle_or_fileno)
+   local fileno
+   if type(handle_or_fileno) == "number" then
+      fileno = handle_or_fileno
+   else
+      fileno = stdio.fileno(handle_or_fileno)
+   end
+   return unistd.isatty(fileno) == 1
 end
 
 function M:current_time()
