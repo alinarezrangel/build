@@ -1,7 +1,7 @@
 return function(...)
    local Posix_File_System = require "build.file-systems.posix"
    local Table_Store = require "build.stores.table"
-   local Build = require "build.systems.make" (Posix_File_System, Table_Store)
+   local JSON_Store = require "build.stores.json"
    local make_dsl = require "build.dsl.make"
    local colors = require "build.colors"
    local getopt = require "build.getopt"
@@ -10,31 +10,22 @@ return function(...)
    local OPTIONS = {
       getopt.ONCE_EACH,
       getopt.opt("C", "directory", "directory", 1),
-      getopt.opt("j", "jobs", "num_jobs", 1),
       getopt.opt(nil, "color", "color", 1),
+      getopt.opt(nil, "rebuilder", "rebuilder", 1),
+      getopt.opt(nil, "scheduler", "scheduler", 1),
+      getopt.opt(nil, "hasher", "hasher", 1),
+      getopt.opt("D", "database", "db_file", 1),
       getopt.ONE_OF,
       getopt.opt("f", "file", "makefile", 1),
       getopt.opt(nil, "makefile", "makefile", 1),
       getopt.MANY_OF,
       getopt.flag("h", "help", "show_help"),
-      getopt.flag("B", "always-make", "always_outdated"),
-      getopt.flag("e", "environment-overrides", "env_overrides"),
-      getopt.flag("i", "ignore-errors", "ignore_errors"),
-      getopt.opt("I", "include-dir", "include_dir", 1),
       getopt.flag("n", "just-print", "dry_run"),
       getopt.flag(nil, "dry-run", "dry_run"),
       getopt.flag(nil, "recon", "dry_run"),
-      getopt.opt("o", "old-file", "assume_old", 1),
-      getopt.opt(nil, "assume-old", "assume_old", 1),
-      getopt.flag("q", "question", "question_mode"),
       getopt.flag("s", "silent", "quiet"),
       getopt.flag(nil, "quiet", "quiet"),
-      getopt.flag("t", "touch", "touch_files"),
       getopt.flag("v", "version", "show_version"),
-      getopt.opt("W", "what-if", "assume_new", 1),
-      getopt.opt(nil, "new-file", "assume_new", 1),
-      getopt.opt(nil, "assume-new", "assume_new", 1),
-      getopt.opt("a", "assume-up-to-date", "assume_up_to_date", 1),
    }
 
    local HELP = ([[build.make -- A simple, make-like build tool.
@@ -49,29 +40,20 @@ info manual `info build.make` or the web page
 Available options are:
 
 -C DIR, --directory DIR                    : Switch to DIR before operating.
--j JOBS, --jobs JOBS                       : Start JOBS parallel jobs.
 --color always|never|auto                  : Enable or disable colored output.
 -f FILE, --file FILE, --makefile FILE      : Use FILE as the makefile.
 -h, --help                                 : Show this help and exit.
--B, --always-make                          : Treat all targets as outdated.
--e, --environment-overrides                : Make environment variables
-                                           . override make variables.
--i, --ignore-errors                        : Proceed despite errors.
--I DIR, --include-dir DIR                  : Add DIR to the list of
-                                           . directories to search when
-                                           . including.
 -n, --just-print, --dry-run, --recon       : Just print what should be done,
                                            . don't do anything.
--o FILE, --old-file FILE                   : Assume FILE to be very old and
-                                           . don't update it.
--q, --question                             : Exit indicating if everything is
-                                           . up to date.
--s, --silect, --quiet                      : Be more quiet.
--t, --touch                                : Touch, but don't build files.
+-s, --silent, --quiet                      : Be more quiet.
 -v, --version                              : Show version and exit.
--W FILE, --what-if FILE, --assume-new FILE : Assume that FILE very new and
-                                           . don't update it.
--a TARGET, --assume-up-to-date TARGET      : Assume that TARGET is up to date.
+--database FILE                            : Use FILE as the backing database file.
+--scheduler NAME                           : Set the scheduler. Must be
+                                           . `topological` or `suspending`.
+--rebuilder NAME                           : Set the rebuilder. Must be `vt`
+                                           . or `mtime`.
+--hasher NAME                              : Set the hasher. Must be `sha1`,
+                                           . `apenwarr` or `mtime`.
 ]])
 
    local VERSION = ([[build.make revision 1
@@ -97,6 +79,8 @@ project, as many modifications were made to the original SHA1 library.
 
    local options, targets = getopt.parse_command_line(OPTIONS, {...})
 
+   options.color = options.color or "auto"
+
    if options.show_help then
       print(HELP)
       os.exit(true, true)
@@ -119,14 +103,82 @@ project, as many modifications were made to the original SHA1 library.
    end
 
    local function printfc(fmt, ...)
-      if options.color == "never" then
-         print(string.format(string.gsub(fmt, M.PATTERN, ""), ...))
+      if options.color == "never"
+         or (options.color == "auto"
+             and not Posix_File_System.is_a_terminal(fs, io.stdout))
+      then
+         print(string.format(string.gsub(fmt, colors.PATTERN, ""), ...))
       else
          print(colors.format(fmt, ...))
       end
    end
 
    local fs = Posix_File_System.global()
+
+   if options.directory then
+      printfc("[:cyan]INFO[:] Changing CWD to %s", options.directory)
+      Posix_File_System.change_current_directory(fs, options.directory)
+   end
+
+   local function get_build_system(Store, config, tasks, dependency_graph)
+      local res = {}
+      local Rebuilder, rebuilder
+      assert(config.rebuilder, "must specify a rebuilder with --rebuilder")
+      if config.rebuilder == "mtime" then
+         Rebuilder = require "build.rebuilders.mtime" (Posix_File_System)
+         rebuilder = Rebuilder.create(fs)
+      elseif config.rebuilder == "vt" then
+         local Hasher, hasher
+         assert(config.hasher, "the vt rebuilder requires the --hasher option")
+         if config.hasher == "sha1" then
+            Hasher = require "build.hashers.sha1" (Posix_File_System)
+            hasher = Hasher.create(fs)
+         elseif config.hasher == "mtime" then
+            Hasher = require "build.hashers.mtime" (Posix_File_System)
+            hasher = Hasher.create(fs)
+         elseif config.hasher == "apenwarr" then
+            Hasher = require "build.hashers.apenwarr" (Posix_File_System)
+            hasher = Hasher.create(fs)
+         else
+            error("unknown hasher name: " .. config.hasher)
+         end
+         assert(config.Backing_Store and config.backing_store,
+                "must use --database flag when using the vt rebuilder")
+         local Verifying_Trace_Store = require "build.traces.verifying.hash" (config.Backing_Store, Hasher)
+         local vt = Verifying_Trace_Store.create(config.backing_store, hasher)
+         res.Hasher = Hasher
+         res.hasher = hasher
+         res.Verifying_Trace_Store = Verifying_Trace_Store
+         res.verifying_trace_store = vt
+         Rebuilder = require "build.rebuilders.verifying-traces" (Verifying_Trace_Store)
+         rebuilder = Rebuilder.create(vt)
+      else
+         error("unknown rebuilder name: " .. config.rebuilder)
+      end
+      res.Rebuilder = Rebuilder
+      res.rebuilder = rebuilder
+      local Scheduler, scheduler, final_tasks
+      assert(config.scheduler, "must specify an scheduler with --scheduler")
+      if config.scheduler == "topological" then
+         Scheduler = require "build.schedulers.topological" (Store)
+         final_tasks = Scheduler.topological_tasks(tasks, dependency_graph)
+      elseif config.scheduler == "suspending" then
+         Scheduler = require "build.schedulers.suspending" (Store)
+         final_tasks = tasks
+      else
+         error("unknown scheduler name: " .. config.scheduler)
+      end
+      scheduler = Scheduler.create(rebuilder)
+      res.Scheduler = Scheduler
+      res.scheduler = scheduler
+      res.tasks = final_tasks
+
+      function res:build(key, store)
+         return self.scheduler(self.tasks, key, store)
+      end
+
+      return res
+   end
 
    local MAKEFILES_NAMES = {
       "BUILDmakefile",
@@ -153,7 +205,9 @@ project, as many modifications were made to the original SHA1 library.
    local recipe_options = {}
 
    local function escape_shell(strs)
-      local res = Posix_File_System.run_wait(fs, "shell-quote", strs, { capture_stdout = true })
+      local args = {"--"}
+      table.move(strs, 1, #strs, 2, args)
+      local res = Posix_File_System.run_wait(fs, "shell-quote", args, { capture_stdout = true })
       if res.exit_code ~= 0 then
          error("no shell-quote")
       else
@@ -222,14 +276,11 @@ project, as many modifications were made to the original SHA1 library.
       recipe_options.is_phony[recipe_options.phony[i]] = true
    end
 
-   local store = Table_Store.empty()
-   local build = Build.create(fs)
-
    local function middletasks(key)
       if not recipe.dependency_graph[key] then
          return function(fetch)
             if not Posix_File_System.get_mtime(fs, key) then
-               printf("The file does not exists and there are no instructions for building it")
+               printfc("[:red]ERROR[:] The file «%s» does not exists and there are no instructions for building it", key)
                error("Could not build " .. key)
             else
                return true
@@ -251,15 +302,35 @@ project, as many modifications were made to the original SHA1 library.
       end
    end
 
-   local topotasks = Build.Scheduler.topological_tasks(middletasks, recipe.dependency_graph)
+   local store = Table_Store.empty()
+   local build_config = {
+      rebuilder = options.rebuilder or "mtime",
+      scheduler = options.scheduler or "topological",
+      hasher = options.hasher,
+   }
+   local function close_db()
+      if not options.db_file then
+         return
+      end
+      printfc("[:cyan]INFO[:] Closing the database")
+      assert(build_config.Backing_Store).save(assert(build_config.backing_store))
+   end
+   local backing_store_closer <close> = utils.closer(close_db, nil)
+   if options.db_file then
+      build_config.Backing_Store = JSON_Store
+      build_config.backing_store = build_config.Backing_Store.open(options.db_file)
+   end
+   local generated_build_system = get_build_system(Table_Store, build_config, middletasks, recipe.dependency_graph)
    local function make(key)
-      return build(topotasks, key, store)
+      return generated_build_system:build(key, store)
    end
 
    for i = 1, #targets do
       make(targets[i])
    end
    if #targets == 0 then
+      -- printfc("[:cyan]INFO[:] Defaulting to %s", recipe_options.first_recipe)
+      -- make(recipe_options.first_recipe)
       make "all"
    end
 end

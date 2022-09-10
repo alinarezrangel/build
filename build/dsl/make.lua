@@ -404,7 +404,6 @@ local function read_task_line(src, i, previous_indentation)
       end
    end
 
-
    return {
       type = "task-line",
       line = final_line,
@@ -608,7 +607,7 @@ function M.eval_part(part, env, pattern)
    elseif ty == "dir-glob" then
       error("directory globbing is not supported")
    elseif ty == "pattern" then
-      return true, pattern
+      return true, assert(pattern, "used a pattern, but no pattern was available")
    elseif ty == "string" then
       local res = {}
       for i = 1, #part.parts do
@@ -651,15 +650,61 @@ function M.eval_components(components, env, pattern)
             end
          end
       end
-      res[#res + 1] = table.concat(acc)
+
+      for j = 1, #acc do
+         res[#res + 1] = acc[j]
+      end
    end
    return res
+end
+
+local function pattern_match(self, text)
+   if string.len(text) < string.len(self.prefix) + string.len(self.suffix) then
+      return nil
+   end
+   if self.prefix ~= "" and string.sub(text, 1, string.len(self.prefix)) ~= self.prefix then
+      return nil
+   end
+   if self.suffix ~= "" and string.sub(text, -string.len(self.suffix), -1) ~= self.suffix then
+      return nil
+   end
+   return string.sub(text, string.len(self.prefix) + 1, -string.len(self.suffix) - 1)
+end
+
+function M.pattern_extract(component, env)
+   local prefix_parts, suffix_parts, pos = {}, {}, nil
+   for i = 1, #component.parts do
+      local part = component.parts[i]
+      if part.type == "pattern" then
+         assert(not pos, "multiples patterns on a target")
+         pos = i
+      elseif not pos then
+         prefix_parts[#prefix_parts + 1] = part
+      else
+         suffix_parts[#suffix_parts + 1] = part
+      end
+   end
+   local prefix = M.eval_components({{parts = prefix_parts}}, env, nil)
+   local suffix = M.eval_components({{parts = suffix_parts}}, env, nil)
+   local matchers = {}
+   for i = 1, #prefix do
+      for j = 1, #suffix do
+         matchers[#matchers + 1] = {
+            prefix = prefix[i],
+            suffix = suffix[j],
+            pattern_match = pattern_match,
+         }
+      end
+   end
+   return not not pos, matchers
 end
 
 function M.eval_make(ast, env, run)
    local graph = {}
    local tasks = {}
    local codes = {}
+   local targets = {}
+   local recipes = {}
 
    for i = 1, #ast.children do
       local child = ast.children[i]
@@ -667,19 +712,37 @@ function M.eval_make(ast, env, run)
       if ty == "task" then
          local header = child.header
          local target, deps, order_only = nil, {}, {}
-         local e_target = M.eval_components({header.target}, env, nil)
-         assert(#e_target == 1)
-         target = e_target[1]
-         graph[target] = graph[target] or {}
-         deps = M.eval_components(header.dependencies, env, nil)
-         for j = 1, #deps do
-            table.insert(graph[target], deps[j])
+         local has_pattern, matchers = M.pattern_extract(header.target, env)
+         local function get_dependencies(key, pattern)
+            return M.eval_components(header.dependencies, env, pattern)
          end
-         assert(#header.order_only_dependencies == 0)
-         assert(not codes[target] or #child.body == 0)
-         if not codes[target] then
-            codes[target] = child.body
+
+         local idx
+         if has_pattern then
+            idx = #targets + 1
+         else
+            idx = 1
          end
+
+         local function task(key)
+            for i = 1, #matchers do
+               local pattern = matchers[i]:pattern_match(key)
+               if pattern and (has_pattern or pattern == "") then
+                  if not has_pattern then
+                     pattern = nil
+                  end
+                  return {
+                     pattern = pattern,
+                     dependencies = get_dependencies(key, pattern),
+                     ast = child,
+                     codes = child.body,
+                  }
+               end
+            end
+            return nil
+         end
+
+         table.insert(targets, idx, task)
       elseif ty == "assigment" then
          if child.override then
             env:new(child.target)
@@ -698,31 +761,37 @@ function M.eval_make(ast, env, run)
       end
    end
 
-   for key, deps in pairs(graph) do
-      tasks[key] = function(fetch)
-         local vals = {}
-         for i = 1, #deps do
-            vals[i] = fetch(deps[i])
+   local function make_subenv(env, key, deps)
+      local subenv = M.make_subenv(env)
+      subenv:new("@")
+      subenv:set("@", {value = {key}})
+      subenv:new("<")
+      if #deps > 0 then
+         subenv:set("<", {value = {deps[1]}})
+      else
+         subenv:set("<", {value = {}})
+      end
+      subenv:new("^")
+      subenv:set("^", {value = utils.remove_duplicates(deps)})
+      subenv:new("+")
+      subenv:set("+", {value = deps})
+      subenv:new("|")
+      subenv:set("|", {value = {}})
+      return subenv
+   end
+
+   local function generate_task_for_data(key, data)
+      return function(fetch)
+         local dependencies = {}
+         for i = 1, #data.dependencies do
+            dependencies[i] = fetch(data.dependencies[i])
          end
 
-         local subenv = M.make_subenv(env)
-         subenv:new("@")
-         subenv:set("@", {value = {key}})
-         if #deps > 0 then
-            subenv:new("<")
-            subenv:set("<", {value = {deps[1]}})
-         end
-         subenv:new("^")
-         subenv:set("^", {value = utils.remove_duplicates(deps)})
-         subenv:new("+")
-         subenv:set("+", {value = deps})
-         subenv:new("|")
-         subenv:set("|", {value = {}})
+         local subenv = make_subenv(env, key, data.dependencies)
 
-         local body = assert(codes[key])
          local expanded_lines = {}
-         for i = 1, #body.lines do
-            local line = body.lines[i]
+         for i = 1, #data.codes.lines do
+            local line = data.codes.lines[i]
             local expanded = {}
             for j = 1, #line.elements do
                local el = line.elements[j]
@@ -736,17 +805,41 @@ function M.eval_make(ast, env, run)
             expanded_lines[#expanded_lines + 1] = expanded
          end
 
-         return run(key, expanded_lines, vals, fetch)
+         return run(key, expanded_lines, dependencies, fetch)
       end
    end
 
-   return graph, tasks
+   local function tasks(key)
+      for i = 1, #targets do
+         local data = targets[i](key)
+         if data then
+            return generate_task_for_data(key, data)
+         end
+      end
+      return nil
+   end
+
+   local function dependencies_of(key)
+      for i = 1, #targets do
+         local data = targets[i](key)
+         if data then
+            return data.dependencies
+         end
+      end
+      return nil
+   end
+
+   return tasks, dependencies_of
 end
 
-function M.make_tasks_from_tasks_table(tasks_table)
-   return function(key)
-      return assert(tasks_table[key])
+function M.dependencies_function_to_graph(dependencies_of)
+   local function index(self, key)
+      if not rawget(self, key) then
+         self[key] = dependencies_of(key)
+      end
+      return rawget(self, key)
    end
+   return setmetatable({}, { __index = index })
 end
 
 function M.parse_and_prepare(code, run)
@@ -755,9 +848,11 @@ function M.parse_and_prepare(code, run)
    if not ast then
       error(errmsg)
    end
-   local graph, tasks_table = M.eval_make(ast, osenv, run)
-   local tasks = M.make_tasks_from_tasks_table(tasks_table)
+   local tasks, dependencies_of = M.eval_make(ast, osenv, run)
+   local graph = M.dependencies_function_to_graph(dependencies_of)
    return {
+      ast = ast,
+      dependencies_of = dependencies_of,
       dependency_graph = graph,
       tasks = tasks,
    }
