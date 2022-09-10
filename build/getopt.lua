@@ -128,7 +128,7 @@ function M.getopt(options, cli, config)
       elseif arg == "--" then
          break
       elseif string.sub(arg, 1, 2) == "--" then
-         local name, na, value = string.match(arg, "^%-%-([^-][^=]*)(=(.*))?$")
+         local name, value = string.match(arg, "^%-%-([^-][^=]*)=(.*)$")
          if name and value then
             handle_opt("long", name, {value})
          else
