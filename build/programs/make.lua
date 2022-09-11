@@ -6,6 +6,7 @@ return function(...)
    local colors = require "build.colors"
    local getopt = require "build.getopt"
    local utils = require "build.utils"
+   local Phony_Adapter = require "build.rebuilders.phony-adapter"
 
    local OPTIONS = {
       getopt.ONCE_EACH,
@@ -122,11 +123,11 @@ project, as many modifications were made to the original SHA1 library.
 
    local function get_build_system(Store, config, tasks, dependency_graph)
       local res = {}
-      local Rebuilder, rebuilder
+      local Base_Rebuilder, base_rebuilder
       assert(config.rebuilder, "must specify a rebuilder with --rebuilder")
       if config.rebuilder == "mtime" then
-         Rebuilder = require "build.rebuilders.mtime" (Posix_File_System)
-         rebuilder = Rebuilder.create(fs)
+         Base_Rebuilder = require "build.rebuilders.mtime" (Posix_File_System)
+         base_rebuilder = Base_Rebuilder.create(fs)
       elseif config.rebuilder == "vt" then
          local Hasher, hasher
          assert(config.hasher, "the vt rebuilder requires the --hasher option")
@@ -150,13 +151,22 @@ project, as many modifications were made to the original SHA1 library.
          res.hasher = hasher
          res.Verifying_Trace_Store = Verifying_Trace_Store
          res.verifying_trace_store = vt
-         Rebuilder = require "build.rebuilders.verifying-traces" (Verifying_Trace_Store)
-         rebuilder = Rebuilder.create(vt)
+         Base_Rebuilder = require "build.rebuilders.verifying-traces" (Verifying_Trace_Store)
+         base_rebuilder = Base_Rebuilder.create(vt)
       else
          error("unknown rebuilder name: " .. config.rebuilder)
       end
-      res.Rebuilder = Rebuilder
-      res.rebuilder = rebuilder
+
+      res.Base_Rebuilder = Base_Rebuilder
+      res.base_rebuilder = base_rebuilder
+
+      config.is_phony_key = config.is_phony_key or function(key)
+         return false
+      end
+
+      res.Rebuilder = Phony_Adapter
+      res.rebuilder = res.Rebuilder.create(res.base_rebuilder, config.is_phony_key)
+
       local Scheduler, scheduler, final_tasks
       assert(config.scheduler, "must specify an scheduler with --scheduler")
       if config.scheduler == "topological" then
@@ -168,7 +178,7 @@ project, as many modifications were made to the original SHA1 library.
       else
          error("unknown scheduler name: " .. config.scheduler)
       end
-      scheduler = Scheduler.create(rebuilder)
+      scheduler = Scheduler.create(res.rebuilder)
       res.Scheduler = Scheduler
       res.scheduler = scheduler
       res.tasks = final_tasks
@@ -307,6 +317,9 @@ project, as many modifications were made to the original SHA1 library.
       rebuilder = options.rebuilder or "mtime",
       scheduler = options.scheduler or "topological",
       hasher = options.hasher,
+      is_phony_key = function(key)
+         return recipe_options.is_phony[key]
+      end,
    }
    local function close_db()
       if not options.db_file then

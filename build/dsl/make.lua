@@ -809,24 +809,91 @@ function M.eval_make(ast, env, run)
       end
    end
 
-   local function tasks(key)
+   local function get_data_for_key(key)
+      local matching_datas = {}
       for i = 1, #targets do
          local data = targets[i](key)
          if data then
-            return generate_task_for_data(key, data)
+            matching_datas[#matching_datas + 1] = data
          end
       end
-      return nil
+
+      if #matching_datas == 0 then
+         return nil
+      elseif #matching_datas == 1 then
+         return matching_datas[1]
+      else
+         local pattern, dependencies, all_codes = nil, {}, {}
+         for i = 1, #matching_datas do
+            local data = matching_datas[i]
+            if pattern and pattern[1] ~= data.pattern then
+               if pattern[1] and not data.pattern then
+                  -- I was recording the data for a rule with a pattern, but
+                  -- there is a rule WITHOUT a pattern. We need to always give
+                  -- priority to pattern-less rules.
+                  pattern = {data.pattern}
+                  dependencies = {}
+                  table.move(data.dependencies, 1, #data.dependencies, 1, dependencies)
+                  all_codes = {data.codes}
+               elseif not pattern[1] and data.pattern then
+                  -- I was recording the data for a rule without a pattern, but
+                  -- a pattern-ed (?) rule was found. We need to ignore it.
+               elseif not pattern[1] and not data.pattern then
+                  -- What? the only falsy value should be nil, which always
+                  -- compares equal to itself.
+                  error("unreachable")
+               else
+                  error("Multiples pattern rules match the same key: " .. tostring(key))
+               end
+            else
+               if not pattern then
+                  pattern = {data.pattern}
+               end
+               table.move(data.dependencies, 1, #data.dependencies,
+                          #dependencies + 1, dependencies)
+               if #data.codes.lines > 0 then
+                  all_codes[#all_codes + 1] = data.codes
+               end
+            end
+         end
+
+         if #all_codes == 0 then
+            all_codes = {
+               {
+                  type = "task-body",
+                  lines = {},
+                  indentation = "",
+               }
+            }
+         end
+         assert(#all_codes == 1,
+                "Multiples recipes for the same key: "  .. tostring(key))
+
+         local new_data = {
+            pattern = pattern,
+            dependencies = dependencies,
+            codes = all_codes[1],
+         }
+         return new_data
+      end
+   end
+
+   local function tasks(key)
+      local data = get_data_for_key(key)
+      if not data then
+         return nil
+      else
+         return generate_task_for_data(key, data)
+      end
    end
 
    local function dependencies_of(key)
-      for i = 1, #targets do
-         local data = targets[i](key)
-         if data then
-            return data.dependencies
-         end
+      local data = get_data_for_key(key)
+      if not data then
+         return nil
+      else
+         return data.dependencies
       end
-      return nil
    end
 
    return tasks, dependencies_of
