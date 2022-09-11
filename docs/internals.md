@@ -241,6 +241,9 @@ Available rebuilders:
     real life, this simple rebuilder servers as an example. It only rebuilds
     each target one; without a way to save the "dirty bit" to non-volatile
     storage this rebuilder is just not very practical.
+  * [`build.rebuilders.phony-adapter`](rebuilders-phony-adapter.md): This
+    *adapter* wraps another rebuilder so that certain keys are always
+    considered out-of-date.
 
 ## Traces ##
 

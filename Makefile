@@ -30,6 +30,7 @@ $(OUTPUTS)/docs/schedulers-topological.html										\
 $(OUTPUTS)/docs/rebuilders-mtime.html											\
 $(OUTPUTS)/docs/rebuilders-verifying-traces.html								\
 $(OUTPUTS)/docs/rebuilders-dirty-bit.html										\
+$(OUTPUTS)/docs/rebuilders-phony-adapter.html									\
 $(OUTPUTS)/docs/traces-verifying-hash.html $(OUTPUTS)/docs/hashers-mtime.html	\
 $(OUTPUTS)/docs/hashers-sha1.html $(OUTPUTS)/docs/hashers-apenwarr.html			\
 $(OUTPUTS)/docs/hashers-combined-clean.html										\

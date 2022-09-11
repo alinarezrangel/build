@@ -32,3 +32,4 @@ The `Rebuilder.create(vt)` function (for a given instance of the
 
   * [`build.rebuilders.mtime`](rebuilders-mtime.md).
   * [`build.rebuilders.dirty_bit`](rebuilders-dirty-bit.md).
+  * [`build.rebuilders.phony-adapter`](rebuilders-phony-adapter.md).

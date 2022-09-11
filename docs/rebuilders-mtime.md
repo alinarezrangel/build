@@ -31,3 +31,4 @@ will create and return the new rebuilder.
 
   * [`build.rebuilders.verifying-traces`](rebuilders-verifying-traces.md).
   * [`build.rebuilders.dirty_bit`](rebuilders-dirty-bit.md).
+  * [`build.rebuilders.phony-adapter`](rebuilders-phony-adapter.md).

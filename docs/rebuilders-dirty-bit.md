@@ -27,3 +27,4 @@ The `Rebuilder.create()` will return the rebuilder.
 
   * [`build.rebuilders.mtime`](rebuilders-mtime.md).
   * [`build.rebuilders.verifying-traces`](rebuilders-verifying-traces.md).
+  * [`build.rebuilders.phony-adapter`](rebuilders-phony-adapter.md).
