@@ -38,6 +38,7 @@ $(OUTPUTS)/docs/hashers-combined-dirty.html
 .PHONY: all
 all: TAGS docs
 
+.PHONY: docs
 docs: $(PAGES) $(OUTPUTS)/docs.zip
 
 TAGS: $(LUA_FILES)
