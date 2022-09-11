@@ -66,6 +66,10 @@ return function(Store)
       return self.tasks(...)
    end
 
+   function M.META:__tostring()
+      return string.format("topotask: (%s)", self.tasks)
+   end
+
    function M.topological_tasks(tasks, dependencies)
       return setmetatable({ tasks = tasks,
                             dependencies = dependencies,
