@@ -86,6 +86,37 @@ Any unquoted `#` will start a comment that lasts until the end of the line. If
 the line ends with an odd number of backslashes `\` then the comment is
 extended to the next line and so on.
 
+### Continuations ###
+
+Extending the previous syntax, any line can end with a backslash `\` and it
+will be *continued* into the next. For example, the two programs are
+equivalent:
+
+```make
+executable: main.c math.c \
+graphics.c physics.c serde.c
+    cc -o $@ $^
+```
+
+```make
+executable: main.c math.c graphics.c physics.c serde.c
+    cc -o $@ $^
+```
+
+You can escape `\` with other `\`. There must be whitespace before a `\` that
+escapes a newline. So, for example, `\\` is a literal `\` and `hola\` does
+**not** continue into the next line. Note that, when not preceded by
+whitespace, `\` has a escaping behaviour. For example, `\\` is a literal `\`,
+while `\#` is a literal `#`. You can escape any of the characters `\`, `#`,
+`:`, `=` and `|` which backslashes. An alternative to backslashes is to put
+them between quotes (`\#` and `"#"` are the same literal).
+
+*Note*: None of the previous paragraph applies to comments, which only check if
+they end in an odd number of backslashes regardless for whenever they are
+preceded by whitespace or not.
+
+Finally, line continuations cannot appear inside string literals.
+
 ### Variables ###
 
 Any of the following forms:
@@ -114,7 +145,7 @@ Make][gnu-make]. Specifically:
 After defining a variable you can refer to it with the syntax `$(VAR)`. If the
 name of the variable is a single character then you can also use `$VAR`. For
 example, `$(CC)` refers to the variable `CC` while `$<` refers to the variable
-`<`.
+`<`. To escape a `$` both inside and outside a recipe use `$$`.
 
 ### Rules ###
 
@@ -131,6 +162,24 @@ a.o b.o c.o` says that the file `lib.so` will be rebuilt if any of `a.o`, `b.c`
 or `c.o` changes and finally the rule `example.txt:` says that `example.txt`
 will be rebuilt when possible (as it has no dependencies it is considered
 permanently "out-of-date"/"to-be-rebuilt").
+
+If `TARGET` contains an unescaped `%` then it is said that this is a *pattern
+rule*. Each unescaped `%` on the dependencies will be replaced by what the `%`
+*matched* on the target. This `%` acts kind of like a shell glob or a SQL
+`LIKE` clause. Unlike a glob, it can match any character. For example, the next
+rule tells how to build *any* file in the directory `build/` that starts with
+`lib` and ends with `.so` by running the C compiler on an equally named (but
+without the extension nor the `lib` at the beginning) file on the `src/libs/`
+directory:
+
+```make
+build/lib%.so: src/libs/%.c
+    cc -shared -o $@ $<
+```
+
+What this rule does is to match an output like `build/libfoo.so`, gets the part
+matched by the `%` (`foo`) and replaces it into any dependency to get
+`src/libs/foo.c`.
 
 ### Recipes ###
 
@@ -207,6 +256,83 @@ the `sh`(1) language, you can concatenate several forms in a single word by
 leaving no whitespace between them. You can use double-quoted strings, bare
 words, make escapes (`$$` to escape a `$`) and backslash escapes. For example,
 `hola" "mundo que$$"("TAL")"` contains 2 words, `hola mundo` and `que$(TAL)`.
+
+All of this happens *syntactically*. This means that `build.make` works closer
+to a common programming language like [Python](https://python.org) or
+[Lua](https://lua.org) than it does with text templating engines like other
+makes or [GNU M4](https://www.gnu.org/software/m4/m4.html).
+
+Some examples: in the following snippet, the variable `FILES` contains 3
+elements with the values `a`, `b c` and `d`:
+
+```make
+FILES = a "b c" d
+```
+
+The next example declares a variable with six elements:
+
+```make
+C_SRCS = a.c b.c c.c
+LUA_SRCS = a.lua b.lua c.lua
+SRCS = $(C_SRCS) $(LUA_SRCS)
+```
+
+As a demonstration that this is not text replacement, the following variable,
+which contains special syntax for `sh`(1), will nonetheless be escaped
+correctly:
+
+```make
+SPECIAL = HOLA=mundo
+
+example:
+    $(SPECIAL)
+```
+
+Will error out with a `HOLA=mundo: not found` error, indicating that the
+`HOLA=mundo` was processed as a command and not an assigment.
+
+If you use a variable with multiple values inside a word, the cartesian product
+of the variable values and the parts after and before it will be produced. For
+example:
+
+```make
+A = 1 2 3
+B = a b c
+C = $(A)
+D = $(A) $(B)
+E = $(A)$(B)
+F = file.$(A).txt
+G = data.$(B).txt z$(A).zip
+```
+
+The variables `A` and `B` have 3 elements each. So does `C`, which has `A`'s
+elements. `D` has the values `1 2 3 a b c`. Because `E`'s definition used
+multi-values variables in the same word, such word gets *expanded* with the
+cartesian product to get the values `1a 1b 1c 2a 2b 2c 3a 3b 3c`. Same with
+`F`, which gets `file.1.txt file.2.txt file.3.txt`. A similar process happens
+for the 2 words of `G` for a total of 9 elements.
+
+This only happens outside of recipes, as `build.make` cannot know the syntax of
+the shell in use.
+
+As a practical example of this, the following makefile will create 2 rules, in
+which `docs.zip` depends on all the source files with a `.txt` extension and
+`src.zip` depends on all the source files with a `.lua` extension:
+
+```make
+FILES = main utils fs buffer panels io
+SRCS = $(FILES).lua
+DOCS = $(FILES).txt
+
+docs.zip: $(DOCS)
+    zip $@ $^
+
+%.txt: %.lua
+    ... # Generate documentation from a lua file
+
+src.zip: $(SRCS)
+    zip $@ $^
+```
 
 ### Special variables ###
 
