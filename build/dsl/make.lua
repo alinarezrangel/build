@@ -186,7 +186,7 @@ local function read_part(src, i)
       return { type = "literal", text = "$" }, ni
    end
    local escaped
-   escaped, ni = string.match(src, "^\\([\\\n#:=|])()", i)
+   escaped, ni = string.match(src, "^\\([\\#:=|])()", i)
    if escaped and ni then
       return { type = "literal", text = escaped }, ni
    end
