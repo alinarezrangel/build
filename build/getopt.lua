@@ -23,12 +23,12 @@ function M.flag(...)
          assert(string.sub(name, 1, 1) == "-")
          opt.short = name
       end
-      opt.name = string.match(name, "^%-%-?([^%s=]*)")
+      opt.var = string.match(name, "^%-%-?([^%s=]*)")
    elseif n == 2 then
       local short, long = ...
       opt.short = short
       opt.long = long
-      opt.name = long
+      opt.var = long
    elseif n == 3 then
       local short, long, var = ...
       opt.short = short
@@ -51,18 +51,19 @@ function M.opt(...)
          assert(string.sub(name, 1, 1) == "-")
          opt.short = name
       end
-      opt.name = string.match(name, "^%-%-?([^%s=]*)")
+      opt.var = string.match(name, "^%-%-?([^%s=]*)")
    elseif n == 2 then
       local short, long = ...
       opt.short = short
       opt.long = long
-      opt.name = long
+      opt.var = long
    elseif n == 3 then
       local short, long, var_or_nargs = ...
       opt.short = short
       opt.long = long
       if type(var_or_nargs) == "number" then
          opt.nargs = var_or_nargs
+         opt.var = opt.long
       else
          opt.var = var_or_nargs
       end
@@ -190,6 +191,8 @@ function M.parseopt(options, vars)
    end
    group = nil
 
+   local handled_option = {}
+
    for i = 1, #options do
       local opt = options[i]
       if opt == M.ONCE_EACH or opt == M.ONE_OF or opt == M.MANY_OF then
@@ -201,7 +204,9 @@ function M.parseopt(options, vars)
          elseif opt == M.ONE_OF then
             reps = "one-of"
          end
-      elseif opt.var then
+      elseif opt.var and not handled_option[opt.var] then
+         handled_option[opt.var] = true
+
          local var = opt.var
          local values = vars[var]
          if values and #values > 0 then
