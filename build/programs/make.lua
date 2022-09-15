@@ -27,6 +27,11 @@ return function(...)
       getopt.flag("s", "silent", "quiet"),
       getopt.flag(nil, "quiet", "quiet"),
       getopt.flag("v", "version", "show_version"),
+      getopt.opt("W", "what-if", "pretend_modified", 1),
+      getopt.opt(nil, "new-file", "pretend_modified", 1),
+      getopt.opt(nil, "assume-new", "pretend_modified", 1),
+      getopt.opt("o", "old-file", "pretend_up_to_date", 1),
+      getopt.opt(nil, "assume-old", "pretend_up_to_date", 1),
    }
 
    local HELP = ([[build.make -- A simple, make-like build tool.
@@ -321,6 +326,7 @@ project, as many modifications were made to the original SHA1 library.
          return recipe_options.is_phony[key]
       end,
    }
+
    local function close_db()
       if not options.db_file then
          return
@@ -342,8 +348,7 @@ project, as many modifications were made to the original SHA1 library.
       make(targets[i])
    end
    if #targets == 0 then
-      -- printfc("[:cyan]INFO[:] Defaulting to %s", recipe_options.first_recipe)
-      -- make(recipe_options.first_recipe)
+      printfc("[:cyan]INFO[:] Defaulting to all")
       make "all"
    end
 end
