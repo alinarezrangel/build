@@ -126,24 +126,24 @@ project, as many modifications were made to the original SHA1 library.
       Posix_File_System.change_current_directory(fs, options.directory)
    end
 
-   local function get_build_system(Store, config, tasks, dependency_graph)
+   local function get_build_system(Store, File_Of_Key, config, tasks, dependency_graph)
       local res = {}
       local Base_Rebuilder, base_rebuilder
       assert(config.rebuilder, "must specify a rebuilder with --rebuilder")
       if config.rebuilder == "mtime" then
-         Base_Rebuilder = require "build.rebuilders.mtime" (Posix_File_System)
+         Base_Rebuilder = require "build.rebuilders.mtime" (Posix_File_System, File_Of_Key)
          base_rebuilder = Base_Rebuilder.create(fs)
       elseif config.rebuilder == "vt" then
          local Hasher, hasher
          assert(config.hasher, "the vt rebuilder requires the --hasher option")
          if config.hasher == "sha1" then
-            Hasher = require "build.hashers.sha1" (Posix_File_System)
+            Hasher = require "build.hashers.sha1" (Posix_File_System, File_Of_Key)
             hasher = Hasher.create(fs)
          elseif config.hasher == "mtime" then
-            Hasher = require "build.hashers.mtime" (Posix_File_System)
+            Hasher = require "build.hashers.mtime" (Posix_File_System, File_Of_Key)
             hasher = Hasher.create(fs)
          elseif config.hasher == "apenwarr" then
-            Hasher = require "build.hashers.apenwarr" (Posix_File_System)
+            Hasher = require "build.hashers.apenwarr" (Posix_File_System, File_Of_Key)
             hasher = Hasher.create(fs)
          else
             error("unknown hasher name: " .. config.hasher)
@@ -327,6 +327,14 @@ project, as many modifications were made to the original SHA1 library.
       end,
    }
 
+   local function File_Of_Key(key)
+      if build_config.is_phony_key(key) then
+         return nil
+      else
+         return key
+      end
+   end
+
    local function close_db()
       if not options.db_file then
          return
@@ -339,7 +347,12 @@ project, as many modifications were made to the original SHA1 library.
       build_config.Backing_Store = JSON_Store
       build_config.backing_store = build_config.Backing_Store.open(options.db_file)
    end
-   local generated_build_system = get_build_system(Table_Store, build_config, middletasks, recipe.dependency_graph)
+   local generated_build_system =
+      get_build_system(Table_Store,
+                       File_Of_Key,
+                       build_config,
+                       middletasks,
+                       recipe.dependency_graph)
    local function make(key)
       return generated_build_system:build(key, store)
    end

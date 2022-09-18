@@ -6,7 +6,7 @@ libbar: yes
 # `build.hashers.sha1` #
 
 **Special meaning of keys?**
-: Yes, as file names.
+: No, but they must have an associated file name.
 
 This hasher uses the SHA1 hash of a file as it's VT hash. This way changes to a
 file that affect it's modification date but not it's content will not trigger a
@@ -26,12 +26,20 @@ collisions.
 ## Usage ##
 
 ```lua
-local Hasher = require "build.hashers.sha1" (Posix_File_System)
+local Hasher = require "build.hashers.sha1" (Posix_File_System, File_Of_Key)
 local hasher = Hasher.create(posix_file_system)
 ```
 
   * `Posix_File_System` must be the POSIX file system structure to use.
+  * `File_Of_Key` must be a function that will be called like
+    `File_Of_Key(key)`. It must return the filename of the file associated with
+    the key, or `nil` if the key has no filename.
   * `posix_file_system` must be the `Posix_File_System` instance to use.
+
+## Notes ##
+
+Same note from the [`mtime` rebuilder](rebuilders-mtime.md) about file-less
+keys applies here.
 
 ## See Also ##
 
