@@ -118,6 +118,7 @@ project, as many modifications were made to the original SHA1 library.
 
    if options.directory then
       printfc("[:cyan]INFO[:] Changing CWD to %s", options.directory)
+      printf("cd %s", options.directory)
       Posix_File_System.change_current_directory(fs, options.directory)
    end
 
