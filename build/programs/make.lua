@@ -27,11 +27,6 @@ return function(...)
       getopt.flag("s", "silent", "quiet"),
       getopt.flag(nil, "quiet", "quiet"),
       getopt.flag("v", "version", "show_version"),
-      getopt.opt("W", "what-if", "pretend_modified", 1),
-      getopt.opt(nil, "new-file", "pretend_modified", 1),
-      getopt.opt(nil, "assume-new", "pretend_modified", 1),
-      getopt.opt("o", "old-file", "pretend_up_to_date", 1),
-      getopt.opt(nil, "assume-old", "pretend_up_to_date", 1),
    }
 
    local HELP = ([[build.make -- A simple, make-like build tool.
