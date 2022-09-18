@@ -301,11 +301,15 @@ project, as many modifications were made to the original SHA1 library.
          local task = recipe.tasks(key)
          return function(fetch)
             local is_phony = recipe_options.is_phony[key]
-            if not is_phony and not options.quiet then
-               printfc("[:green]BUILDING[:] %s", key)
+            if not options.quiet then
+               if is_phony then
+                  printfc("[:green]RUNNING[:] %s", key)
+               else
+                  printfc("[:green]BUILDING[:] %s", key)
+               end
             end
             local value = task(fetch)
-            if not is_phony and not options.quiet then
+            if not options.quiet then
                printfc("[:blue]DONE[:] %s", key)
             end
             return value
