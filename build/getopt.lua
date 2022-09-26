@@ -1,16 +1,6 @@
 local M = {}
 
-local function tsub(t, i, j)
-   local len = t.n or #t
-   i = i or 1
-   j = j or len
-   local res, w = {}, 1
-   for k = i, j do
-      res[w] = t[k]
-      w = w + 1
-   end
-   return res
-end
+local utils = require "build.utils"
 
 function M.flag(...)
    local n = select("#", ...)
@@ -136,7 +126,7 @@ function M.getopt(options, cli, config)
             name = string.match(arg, "^%-%-([^-][^=]*)$")
             if name then
                local nargs = nargs_of("long", name)
-               local values = tsub(cli, i, i + nargs - 1)
+               local values = utils.table_sub(cli, i, i + nargs - 1)
                i = i + nargs
                handle_opt("long", name, values)
             else
@@ -147,7 +137,7 @@ function M.getopt(options, cli, config)
          for j = 2, string.len(arg) do
             local flag = string.sub(arg, j, j)
             local nargs = nargs_of("short", flag)
-            local values = tsub(cli, i, i + nargs - 1)
+            local values = utils.table_sub(cli, i, i + nargs - 1)
             i = i + nargs
             handle_opt("short", flag, values)
          end
