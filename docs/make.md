@@ -8,7 +8,7 @@ toolbar: yes
 The `build.lua` library comes with a clone of the classic `make` program called
 `build.make`. This program implements a `make`-like
 [DSL](https://en.wikipedia.org/wiki/Domain-specific_language) that is mostly
-compatible with a subset of `make`.
+compatible with a subset of GNU Make.
 
 ## Basic usage ##
 
