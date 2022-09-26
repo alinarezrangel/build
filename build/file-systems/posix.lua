@@ -14,6 +14,12 @@ function M:change_current_directory(path)
    unistd.chdir(path)
 end
 
+function M:get_current_directory()
+   local cwd, errmsg = unistd.getcwd()
+   assert(cwd, errmsg)
+   return cwd
+end
+
 function M:is_a_terminal(handle_or_fileno)
    local fileno
    if type(handle_or_fileno) == "number" then

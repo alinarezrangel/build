@@ -6,26 +6,27 @@ PANDOC_FLAGS = --lua-filter docs/pandoc-filter.lua --toc --css mkmain.css	\
 
 OUTPUTS = outputs
 
-LUA_FILES = build/dsl/make.lua build/file-systems/posix.lua				\
-build/hashers/init.lua build/hashers/mtime.lua build/hashers/sha1.lua	\
-build/hashers/combined-clean.lua build/hashers/combined-dirty.lua		\
-build/rebuilders/init.lua build/rebuilders/mtime.lua					\
-build/rebuilders/dirty_bit.lua build/rebuilders/verifying-traces.lua	\
-build/schedulers/init.lua build/schedulers/suspending.lua				\
-build/schedulers/topological.lua build/stores/json.lua					\
-build/stores/sqlite3.lua build/stores/table.lua build/systems/init.lua	\
-build/systems/make.lua build/systems/ninja.lua build/systems/redo.lua	\
-build/systems/sha1-redo.lua build/systems/shake.lua						\
-build/third-party/mpeterv-sha1.lua build/third-party/rxi-json.lua		\
-build/traces/init.lua build/traces/verifying/init.lua					\
-build/traces/verifying/hash.lua build/colors.lua build/getopt.lua		\
-build/init.lua build/utils.lua build/programs/make.lua
+LUA_FILES = build/dsl/make.lua build/dsl/redo.lua build/file-systems/posix.lua	\
+build/hashers/init.lua build/hashers/mtime.lua build/hashers/sha1.lua			\
+build/hashers/combined-clean.lua build/hashers/combined-dirty.lua				\
+build/rebuilders/init.lua build/rebuilders/mtime.lua							\
+build/rebuilders/dirty_bit.lua build/rebuilders/verifying-traces.lua			\
+build/schedulers/init.lua build/schedulers/suspending.lua						\
+build/schedulers/topological.lua build/stores/json.lua							\
+build/stores/sqlite3.lua build/stores/table.lua build/systems/init.lua			\
+build/systems/make.lua build/systems/ninja.lua build/systems/redo.lua			\
+build/systems/sha1-redo.lua build/systems/shake.lua								\
+build/third-party/mpeterv-sha1.lua build/third-party/rxi-json.lua				\
+build/traces/init.lua build/traces/verifying/init.lua							\
+build/traces/verifying/hash.lua build/colors.lua build/getopt.lua				\
+build/init.lua build/utils.lua build/programs/make.lua build/programs/redo.lua
 
 PAGES = $(OUTPUTS)/docs/index.html $(OUTPUTS)/docs/main.css						\
 $(OUTPUTS)/docs/mkmain.css $(OUTPUTS)/docs/README.html							\
 $(OUTPUTS)/docs/install.html $(OUTPUTS)/docs/make.html							\
-$(OUTPUTS)/docs/internals.html $(OUTPUTS)/docs/stores-table.html				\
-$(OUTPUTS)/docs/stores-json.html $(OUTPUTS)/docs/schedulers-suspending.html		\
+$(OUTPUTS)/docs/redo.html $(OUTPUTS)/docs/internals.html						\
+$(OUTPUTS)/docs/stores-table.html $(OUTPUTS)/docs/stores-json.html				\
+$(OUTPUTS)/docs/schedulers-suspending.html										\
 $(OUTPUTS)/docs/schedulers-topological.html										\
 $(OUTPUTS)/docs/rebuilders-mtime.html											\
 $(OUTPUTS)/docs/rebuilders-verifying-traces.html								\

@@ -123,6 +123,7 @@ Right now only the `build.file-systems.posix` module exists. It is a structure
 local Posix_File_System = require "build.file-systems.posix"
 local fs = Posix_File_System.global()
 Posix_File_System.change_current_directory(fs, path)
+local cwd = Posix_File_System.get_current_directory(fs)
 local is_a_term = Posix_File_System.is_a_terminal(fs, handle_or_fileno)
 local right_now = Posix_File_System.current_time(fs)
 local stat_st = Posix_File_System.get_stats(fs, path)
@@ -150,14 +151,17 @@ porting if you want to take advantage of a different, incompatible file system.
 -------------------------------------------------------------------------------
 
 The next functions are all simple: `change_current_directory()` does what its
-name says (it's basically a Lua version of `cd`), `is_a_terminal()` returns
-`true` or `false` depending on the handle or fileno is a tty (see `isatty`(3)),
+name says (it's basically a Lua version of `cd`), `get_current_directory()` is
+similar, being a Lua version of `pwd`, `is_a_terminal()` returns `true` or
+`false` depending on the handle or fileno is a tty (see `isatty`(3)),
 `current_time()` returns the current time in seconds since the
 epoch. `get_stats()` gets the stat structure of a path. It must return a table
 [like the one used by
 luaposix](https://luaposix.github.io/luaposix/modules/posix.sys.stat.html#PosixStat).
 
 `get_mtime()` is a subset of `get_stats()`: it only returns the `st_mtime` field.
+
+<a id="run_wait_func"></a>
 
 `run_wait()` is the most complex of all: it runs and waits for a program to
 execute, possibly capturing its stdout: It can be called like this: `local

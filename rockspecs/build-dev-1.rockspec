@@ -16,12 +16,14 @@ build = {
    type = "builtin",
    install = {
       bin = {
-         ["build.make"] = "programs/build.make.lua"
+         ["build.make"] = "programs/build.make.lua",
+         ["build.redo"] = "programs/build.redo.lua"
       }
    },
    modules = {
       ["build.colors"] = "build/colors.lua",
       ["build.dsl.make"] = "build/dsl/make.lua",
+      ["build.dsl.redo"] = "build/dsl/redo.lua",
       ["build.file-systems.posix"] = "build/file-systems/posix.lua",
       ["build.getopt"] = "build/getopt.lua",
       ["build.hashers.apenwarr"] = "build/hashers/apenwarr.lua",
@@ -53,6 +55,7 @@ build = {
       ["build.traces.verifying.hash"] = "build/traces/verifying/hash.lua",
       ["build.traces.verifying.init"] = "build/traces/verifying/init.lua",
       ["build.utils"] = "build/utils.lua",
-      ["build.programs.make"] = "build/programs/make.lua"
+      ["build.programs.make"] = "build/programs/make.lua",
+      ["build.programs.redo"] = "build/programs/redo.lua"
    }
 }

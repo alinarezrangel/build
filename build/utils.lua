@@ -79,4 +79,90 @@ function M.chomp_end(str)
    return (string.match(str, "^(.-)\n$")) or str
 end
 
+function M.split_match(str, patt)
+   local res = {}
+   for cap in string.gmatch(str, patt) do
+      res[#res + 1] = cap
+   end
+   return res
+end
+
+function M.table_sub(t, i, j)
+   local len = t.n or #t
+   i = i or 1
+   j = j or len
+   local res, w = {}, 1
+   for k = i, j do
+      res[w] = t[k]
+      w = w + 1
+   end
+   return res
+end
+
+function M.string_rfind_plain(haystack, needle, start)
+   start = start or string.len(haystack)
+   -- Extremely inefficient.
+   for i = start - string.len(needle) + 1, 1, -1 do
+      if string.sub(haystack, i, i + string.len(needle) - 1) == needle then
+         return i
+      end
+   end
+   return nil
+end
+
+function M.basename(filename)
+   local p = M.string_rfind_plain(filename, "/")
+   if p then
+      return string.sub(filename, p + 1, -1)
+   else
+      return filename
+   end
+end
+
+function M.dirname(filename)
+   local p = M.string_rfind_plain(filename, "/")
+   if not p then
+      return "."
+   else
+      return string.sub(filename, 1, p)
+   end
+end
+
+function M.shallow_copy(tbl)
+   local r = {}
+   for k, v in pairs(tbl) do
+      r[k] = v
+   end
+   return r
+end
+
+function M.semver(semver)
+   local m, n, p = string.match(semver, "^v?([0-9]+)%.([0-9]+)%.([0-9]+)$")
+   return {
+      major = tonumber(m),
+      minor = tonumber(n),
+      patch = tonumber(p),
+   }
+end
+
+require "fennel"
+local V = require "fennel.view"
+
+function M.eager_resolve(path)
+   local parts = M.split_match(path, "([^/]+)")
+   local res = {}
+   for i = 1, #parts do
+      if #res > 0 and res[#res] ~= ".." and parts[i] == ".." then
+         res[#res] = nil
+      else
+         res[#res + 1] = parts[i]
+      end
+   end
+   return table.concat(res, "/")
+end
+
+function M.eager_join(base, path)
+   return M.eager_resolve(base .. "/" .. path)
+end
+
 return M
