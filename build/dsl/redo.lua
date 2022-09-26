@@ -137,13 +137,17 @@ return function(Posix_File_System)
       function env.read_file(path)
          local handle <close>, errmsg = io.open(path, "rb")
          assert(handle, "read_file(path): " .. tostring(errmsg))
-         return handle:read "a"
+         return (handle:read "a")
       end
 
       function env.write_file(path, contents)
          local handle <close>, errmsg = io.open(path, "wb")
          assert(handle, "write_file(path): " .. tostring(errmsg))
          handle:write(contents)
+      end
+
+      function env.chomp_file(path)
+         return utils.chomp_end(env.read_file(path))
       end
 
       join = utils.eager_join
