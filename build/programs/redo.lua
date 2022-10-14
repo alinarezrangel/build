@@ -110,6 +110,8 @@ project, as many modifications were made to the original SHA1 library.
    local global_env = redo_dsl.make_lua_env()
    global_env = redo_dsl.extend_env_with_dsl(fs, global_env)
 
+   global_env.Posix_File_System = Posix_File_System
+   global_env.posix_file_system = fs
    global_env.BASE_DIR = Posix_File_System.get_current_directory(fs)
 
    local nesting_level = 0
