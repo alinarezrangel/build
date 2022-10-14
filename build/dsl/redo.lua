@@ -100,7 +100,7 @@ return function(Posix_File_System)
          return utils.chomp_end(res.stdout)
       end
 
-      function env.shf(cmdf, ...)
+      function env.fsh(cmdf, ...)
          local i = 1
          local args = table.pack(...)
          local function repl(c)
@@ -122,7 +122,11 @@ return function(Posix_File_System)
                error("shf(cmdf, ...): unknown escape sequence '%" .. c .. "'")
             end
          end
-         local cmd = string.gsub(cmdf, "%%(.)", repl)
+         return (string.gsub(cmdf, "%%(.)", repl))
+      end
+
+      function env.shf(cmdf, ...)
+         local cmd = env.fsh(cmdf, ...)
          return env.run {env.SHELL, "-c", cmd}
       end
 
