@@ -36,7 +36,7 @@ return function(Posix_File_System)
             if name == "/" or name == "." then
                removed_so_far = orig_filename
             else
-               removed_so_far = string.sub(orig_filename, string.len(name), -1)
+               removed_so_far = string.sub(orig_filename, string.len(name) + 1, -1)
             end
          else
             removed_so_far = utils.basename(orig_filename)
