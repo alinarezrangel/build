@@ -167,7 +167,12 @@ project, as many modifications were made to the original SHA1 library.
                local file = File_Of_Key(key)
                local res
                if file then
-                  local actual_file = utils.eager_join(inside, file)
+                  local actual_file
+                  if utils.is_absolute(file) then
+                     actual_file = file
+                  else
+                     actual_file = utils.eager_join(inside, file)
+                  end
                   res = fetch(actual_file)
                else
                   res = fetch(key)
