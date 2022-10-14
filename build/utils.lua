@@ -145,8 +145,6 @@ function M.semver(semver)
    }
 end
 
-require "fennel"
-local V = require "fennel.view"
 
 function M.eager_resolve(path)
    local parts = M.split_match(path, "([^/]+)")
