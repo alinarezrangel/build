@@ -145,6 +145,9 @@ function M.semver(semver)
    }
 end
 
+function M.is_absolute(path)
+   return path ~= "" and string.sub(path, 1, 1) == "/"
+end
 
 function M.eager_resolve(path)
    local parts = M.split_match(path, "([^/]+)")
