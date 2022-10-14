@@ -154,12 +154,22 @@ function M.eager_resolve(path)
    local res = {}
    for i = 1, #parts do
       if #res > 0 and res[#res] ~= ".." and parts[i] == ".." then
+         while res[#res] == "." do
+            res[#res] = nil
+         end
          res[#res] = nil
       else
          res[#res + 1] = parts[i]
       end
    end
-   return table.concat(res, "/")
+   local rel = table.concat(res, "/")
+   if M.is_absolute(path) then
+      return "/" .. rel
+   elseif rel == "" then
+      return "."
+   else
+      return rel
+   end
 end
 
 function M.eager_join(base, path)
