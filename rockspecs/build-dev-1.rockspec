@@ -1,7 +1,7 @@
 package = "build"
 version = "dev-1"
 source = {
-   url = "git+ssh://git@github.com/alinarezrangel/build.git"
+   url = "git+https://github.com/alinarezrangel/build.git"
 }
 description = {
    summary = "A simple build system written almost purely in Lua.",
@@ -37,6 +37,7 @@ build = {
       ["build.rebuilders.init"] = "build/rebuilders/init.lua",
       ["build.rebuilders.mtime"] = "build/rebuilders/mtime.lua",
       ["build.rebuilders.verifying-traces"] = "build/rebuilders/verifying-traces.lua",
+      ["build.rebuilders.phony-adapter"] = "build/rebuilders/phony-adapter.lua",
       ["build.schedulers.init"] = "build/schedulers/init.lua",
       ["build.schedulers.suspending"] = "build/schedulers/suspending.lua",
       ["build.schedulers.topological"] = "build/schedulers/topological.lua",
