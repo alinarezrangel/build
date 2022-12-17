@@ -50,13 +50,17 @@ end
 
 local DEFAULT_RUN_CONFIG = {
    capture_stdout = false,
+   capture_stderr = false,
 }
 
 function M:run_wait(program, args, config)
    config = config or DEFAULT_RUN_CONFIG
-   local outr, outw
+   local outr, outw, errr, errw
    if config.capture_stdout then
       outr, outw = unistd.pipe()
+   end
+   if config.capture_stderr then
+      errr, errw = unistd.pipe()
    end
    local pid, errmsg, errno = unistd.fork()
    if not pid then
@@ -66,15 +70,28 @@ function M:run_wait(program, args, config)
          unistd.dup2(outw, 1)
          unistd.close(outr)
       end
+      if config.capture_stderr then
+         unistd.dup2(outw, 2)
+         unistd.close(outr)
+      end
       local n
       n, errmsg, errno = unistd.execp(program, args)
       error("could not exec: " .. errmsg)
    else
       local res = {}
-      if config.capture_stdout then
-         unistd.close(outw)
-         local parts = { [outr] = {} }
-         local fds = { [outr] = { events = { IN = true } } }
+      if config.capture_stdout or config.capture_stderr then
+         local parts = {}
+         local fds = {}
+         if config.capture_stdout then
+            unistd.close(outw)
+            parts[outr] = {}
+            fds[outr] = { events = { IN = true } }
+         end
+         if config.capture_stderr then
+            unistd.close(errw)
+            parts[errr] = {}
+            fds[errr] = { events = { IN = true } }
+         end
          while next(fds) do
             poll.poll(fds, -1)
             for fd in pairs(fds) do
@@ -87,7 +104,12 @@ function M:run_wait(program, args, config)
                end
             end
          end
-         res.stdout = table.concat(parts[outr])
+         if config.capture_stdout then
+            res.stdout = table.concat(parts[outr])
+         end
+         if config.capture_stderr then
+            res.stderr = table.concat(parts[errr])
+         end
       end
       local cpid
       cpid, errmsg, errno = wait.wait(pid)
@@ -97,7 +119,7 @@ function M:run_wait(program, args, config)
          -- errno is the exit code
          res.exit_code = errno
 
-         if config.capture_stdout then
+         if config.capture_stdout or config.capture_stderr then
             return res
          else
             return res.exit_code
