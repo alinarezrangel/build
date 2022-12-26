@@ -17,6 +17,8 @@ return function(...)
       getopt.opt(nil, "scheduler", "scheduler", 1),
       getopt.opt(nil, "hasher", "hasher", 1),
       getopt.opt("D", "database", "db_file", 1),
+      getopt.flag(nil, "clean", "do_clean"),
+      getopt.flag(nil, "list-cleanable", "list_cleanable"),
       getopt.MANY_OF,
       getopt.flag("h", "help", "show_help"),
       getopt.flag("v", "version", "show_version"),
@@ -35,11 +37,13 @@ the several `.do.lua` files. See the man page build.redo(1), the info manual
 
 Available options are:
 
--C DIR, --directory DIR                    : Switch to DIR before operating.
---color always|never|auto                  : Enable or disable colored output.
--h, --help                                 : Show this help and exit.
--v, --version                              : Show version and exit.
---database FILE                            : Use FILE as the backing database file.
+-C DIR, --directory DIR   : Switch to DIR before operating.
+--color always|never|auto : Enable or disable colored output.
+-h, --help                : Show this help and exit.
+-v, --version             : Show version and exit.
+--database FILE           : Use FILE as the backing database file.
+--clean                   : Clean all the intermediary files.
+--list-cleanable          : List all intermediary files.
 ]])
 
    local VERSION = ([[build.redo revision 1
@@ -114,10 +118,10 @@ project, as many modifications were made to the original SHA1 library.
    global_env.posix_file_system = fs
    global_env.BASE_DIR = Posix_File_System.get_current_directory(fs)
 
-   local nesting_level = 0
    function global_env.prelude(env) end
    function global_env.postlude(env) end
 
+   local nesting_level, redofile_path = 0, nil
 
    local function tasks(key)
       if rawequal(key, IMPOSSIBLE_DEPENDENCY) then
@@ -206,6 +210,17 @@ project, as many modifications were made to the original SHA1 library.
                safe_fetch(IMPOSSIBLE_DEPENDENCY)
             end
 
+            -- This is necessary to add the dependency of every file to their
+            -- recipe and the Redofile (if it exists).
+            --
+            -- We don't use `subenv.ifchange` because that resolves the
+            -- filename *relative to the recipe file*, while here we have the
+            -- filename *relative to the tool CWD*.
+            fetch(path)
+            if redofile_path then
+               fetch(redofile_path)
+            end
+
             local cder <close> = utils.closer(cd_out, nil)
             local chunk = redo_dsl.run_recipe(path, subenv)
             cd_in()
@@ -277,6 +292,7 @@ project, as many modifications were made to the original SHA1 library.
       local stats = Posix_File_System.get_stats(fs, redo_dsl.REDOFILE_FILE)
       if stats then
          redo_dsl.run_recipe(redo_dsl.REDOFILE_FILE, global_env)()
+         redofile_path = redo_dsl.REDOFILE_FILE
       end
    end
 
@@ -284,7 +300,43 @@ project, as many modifications were made to the original SHA1 library.
       error("cannot call the build(key) function after the main script has executed")
    end
 
-   if #targets == 0 then
+   if options.do_clean or options.list_cleanable then
+      if options.do_clean then
+         printfc("[:red]WARN[:]  Cleaning intermediary files")
+      end
+      -- FIXME: This should not access the Backing_Store internals.
+      assert(Backing_Store == JSON_Store, "NYI: non-JSON backing stores for cleaning")
+      local errnos = Posix_File_System.get_errno(fs)
+      for key in pairs(backing_store.base.keys) do
+         local value = backing_store.base.values[key]
+         -- FIXME: This should not access the Rebuilder internals
+         local should_delete = not not next(value.dependencies) -- has any dependencies?
+         if options.do_clean then
+            if should_delete then
+               local ok, errmsg, errno = Posix_File_System.try_delete_file(fs, key)
+               if not ok then
+                  if errno == errnos.ENOENT then
+                     printfc("[:yellow]I[:] %s", key)
+                  else
+                     error("could not delete the file " .. key .. ": " .. errmsg)
+                  end
+               else
+                  printfc("[:red]D[:] %s", key)
+               end
+            else
+               printfc("[:green]K[:] %s", key)
+            end
+         else
+            assert(options.list_cleanable)
+            if not should_delete then
+               printfc("[:green]K[:] %s", key)
+            else
+               printfc("[:red]D[:] %s", key)
+            end
+         end
+      end
+   elseif #targets == 0 then
+      printfc("[:cyan]INFO[:] Implicitly building 'all' target")
       build "all"
    else
       for i = 1, #targets do

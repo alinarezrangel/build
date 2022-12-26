@@ -6,8 +6,13 @@ local poll = require "posix.poll"
 local stat = require "posix.sys.stat"
 local time = require "posix.sys.time"
 local wait = require "posix.sys.wait"
+local errno = require "posix.errno"
 
 function M.global()
+end
+
+function M:get_errno()
+   return errno
 end
 
 function M:change_current_directory(path)
@@ -46,6 +51,10 @@ function M:get_mtime(path)
    else
       return nil
    end
+end
+
+function M:try_delete_file(path)
+   return unistd.unlink(path)
 end
 
 local DEFAULT_RUN_CONFIG = {
