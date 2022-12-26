@@ -115,6 +115,9 @@ project, as many modifications were made to the original SHA1 library.
    global_env.BASE_DIR = Posix_File_System.get_current_directory(fs)
 
    local nesting_level = 0
+   function global_env.prelude(env) end
+   function global_env.postlude(env) end
+
 
    local function tasks(key)
       if rawequal(key, IMPOSSIBLE_DEPENDENCY) then
@@ -206,7 +209,9 @@ project, as many modifications were made to the original SHA1 library.
             local cder <close> = utils.closer(cd_out, nil)
             local chunk = redo_dsl.run_recipe(path, subenv)
             cd_in()
+            subenv:prelude()
             chunk()
+            subenv:postlude()
             cd_out()
             printfc("[:blue]DONE[:]    %s%s (%s)", indentation, key, path)
          end
