@@ -74,6 +74,41 @@ return function(Posix_File_System)
       env.REDO_DSL_VERSION = M.REDO_DSL_VERSION
       env.SHELL = "sh"
 
+      -- Utilities to print and error.
+
+      function env.fprint(handle, ...)
+         local args = {...}
+         for i = 1, select("#", ...) do
+            if i > 1 then
+               handle:write "\t"
+            end
+            handle:write(tostring(args[i]))
+         end
+         handle:write "\n"
+      end
+
+      function env.eprint(...)
+         env.fprint(io.stderr, ...)
+      end
+
+      function env.printf(fmt, ...)
+         env.print(string.format(fmt, ...))
+      end
+
+      function env.eprintf(fmt, ...)
+         env.eprint(string.format(fmt, ...))
+      end
+
+      function env.errorf(fmt, ...)
+         error(string.format(fmt, ...))
+      end
+
+      function env.warnf(fmt, ...)
+         warn(string.format(fmt, ...))
+      end
+
+      -- Actual DSL functions.
+
       function env.run_wait(...)
          return Posix_File_System.run_wait(fs, ...)
       end
@@ -154,7 +189,41 @@ return function(Posix_File_System)
          return utils.chomp_end(env.read_file(path))
       end
 
-      join = utils.eager_join
+      function env.trim_slashes(dir)
+         return (string.match(dir, "^(.-)/*$"))
+      end
+
+      function env.num_directories(path)
+         local dir = env.trim_slashes(utils.dirname(path))
+         local c = 0
+         while dir ~= "." and dir ~= "/" do
+            c = c + 1
+            dir = env.trim_slashes(utils.dirname(dir))
+         end
+         return c
+      end
+
+      function env.getenv_or_empty(name, def)
+         return os.getenv(name) or def or ""
+      end
+
+      function env.setenv(name, value)
+         Posix_File_System.setenv(fs, name, value)
+      end
+
+      function env.empty_or(value, def)
+         if not value or value == "" then
+            return def
+         else
+            return value
+         end
+      end
+
+      function env.replace_extension(path, new_ext)
+         return (string.gsub(path, "(%.[^%.]*)$", new_ext))
+      end
+
+      env.join = utils.eager_join
 
       return env
    end

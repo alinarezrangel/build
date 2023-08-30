@@ -38,10 +38,10 @@ $(OUTPUTS)/docs/hashers-combined-clean.html										\
 $(OUTPUTS)/docs/hashers-combined-dirty.html
 
 .PHONY: all
-all: TAGS docs
+all: TAGS all_docs
 
-.PHONY: docs
-docs: $(PAGES) $(OUTPUTS)/docs.zip
+.PHONY: all_docs
+all_docs: $(PAGES) $(OUTPUTS)/docs.zip
 
 TAGS: $(LUA_FILES)
 	etags -l lua -o $@ $(LUA_FILES)

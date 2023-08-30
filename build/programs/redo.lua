@@ -158,6 +158,7 @@ project, as many modifications were made to the original SHA1 library.
             subenv.TARGET = rel_path_to_file
             subenv.TARGET_NAME = utils.basename(subenv.TARGET)
             subenv.TARGET_DIR = utils.dirname(subenv.TARGET)
+            subenv.REL_BASE_DIR = subenv.empty_or(string.rep("../", subenv.num_directories(subenv.RECIPE)), ".")
             local inside = subenv.RECIPE_DIR
 
             local previous_cwd = Posix_File_System.get_current_directory(fs)

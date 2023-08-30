@@ -6,7 +6,7 @@ title: Installation guide
 
 ## Dependencies ##
 
-- Lua 5.4.
+- [Lua 5.4](https://lua.org).
 - [The `luaposix` library](https://github.com/luaposix/luaposix/).
 - [`shell-quote`(1p)](https://manpages.debian.org/buster/libstring-shellquote-perl/shell-quote.1p.en.html).
 
@@ -17,6 +17,7 @@ Clone [this repository](https://github.com/alinarezrangel/build) and run
 
 ## Manual installation ##
 
-Move the `build/` directory to somewhere in your `LUA_PATH` and copy
-`programs/build.make.lua` as `build.make` to somewhere in your `PATH`. Remember
-to make `build.make` an executable (with `chmod +x`).
+Move the `build/` directory to somewhere in your `LUA_PATH` and copy the files
+in the `programs/` directory without their `.lua` extension (so for example,
+`build.make.lua` becomes `build.make`) to any directory in your
+`PATH`. Remember to make these files executable (with `chmod +x`).

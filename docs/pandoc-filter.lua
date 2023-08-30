@@ -4,5 +4,6 @@
 
 function Link(el)
    el.target = string.gsub(el.target, "%.md$", ".html")
+   el.target = string.gsub(el.target, "%.md(#.*)$", ".html%1")
    return el
 end

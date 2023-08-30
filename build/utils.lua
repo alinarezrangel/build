@@ -172,8 +172,19 @@ function M.eager_resolve(path)
    end
 end
 
-function M.eager_join(base, path)
-   return M.eager_resolve(base .. "/" .. path)
+function M.eager_join(base, ...)
+   return M.eager_resolve(base .. "/" .. table.concat({...}, "/"))
+end
+
+function M.flatten(tbl)
+   local res = {}
+   for i = 1, #tbl do
+      local t = tbl[i]
+      for j = 1, #t do
+         res[#res + 1] = t[j]
+      end
+   end
+   return res
 end
 
 return M

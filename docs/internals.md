@@ -129,6 +129,9 @@ local right_now = Posix_File_System.current_time(fs)
 local stat_st = Posix_File_System.get_stats(fs, path)
 local mtime = Posix_File_System.get_mtime(fs, path)
 local res = Posix_File_System.run_wait(fs, program, args, config)
+local errnos = Posix_File_System.get_errno(fs)
+Posix_File_System.setenv(fs, name, value)
+local ok, error = Posix_File_System.try_delete_file(fs, path)
 ```
 
 The `global()` function returns an instance of the file system. As this module
@@ -161,6 +164,17 @@ luaposix](https://luaposix.github.io/luaposix/modules/posix.sys.stat.html#PosixS
 
 `get_mtime()` is a subset of `get_stats()`: it only returns the `st_mtime` field.
 
+`get_errno()` returnsa table mapping all the errno names to their numeric
+values for this system. For example, if `errnos` is the errno table returned by
+`get_errno()` then `errnos.EINVAL` is the number that corresponds with
+`EINVAL`.
+
+`setenv()` will set an environment variable, as it's name says.
+
+`try_delete_file()` will try to permanently delete a file. It either returns
+`true` if the file could be deleted, or `false, errmsg, errno` where `errmsg`
+is a string with the error message and `errno` is the errno for the error.
+
 <a id="run_wait_func"></a>
 
 `run_wait()` is the most complex of all: it runs and waits for a program to
@@ -171,10 +185,13 @@ sequential table (array) with the arguments to pass. It must return the exit
 code of the program.
 
 But it can also be called like this: `local result =
-Posix_File_System.run_wait(fs, program, args, { capture_stdout = true })`. When
-this is done the result is no longer a number but instead a table with the
-fields `exit_code` and `stdout`. `exit_code` is the same than before and
-`stdout` is a string with all of the standard output of the subprocess.
+Posix_File_System.run_wait(fs, program, args, { capture_stdout = BOOL,
+capture_stderr = BOOL })`. When this is done the result is no longer a number
+but instead a table with the field `exit_code` and optionally `stdout` and/or
+`stderr`. `exit_code` is the same than before and `stdout`/`stderr` are strings
+with all of the standard output/error of the subprocess. `stdout` and `stderr`
+are only set if their respective `capture_stdout` / `capture_stderr` option is
+true.
 
 ## Stores ##
 

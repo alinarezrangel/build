@@ -1,6 +1,7 @@
 local M = {}
 
 local stdio = require "posix.stdio"
+local stdlib = require "posix.stdlib"
 local unistd = require "posix.unistd"
 local poll = require "posix.poll"
 local stat = require "posix.sys.stat"
@@ -13,6 +14,10 @@ end
 
 function M:get_errno()
    return errno
+end
+
+function M:setenv(name, value)
+   stdlib.setenv(name, tostring(value))
 end
 
 function M:change_current_directory(path)
@@ -63,6 +68,7 @@ local DEFAULT_RUN_CONFIG = {
 }
 
 function M:run_wait(program, args, config)
+   local had_config = config ~= nil
    config = config or DEFAULT_RUN_CONFIG
    local outr, outw, errr, errw
    if config.capture_stdout then
@@ -128,7 +134,7 @@ function M:run_wait(program, args, config)
          -- errno is the exit code
          res.exit_code = errno
 
-         if config.capture_stdout or config.capture_stderr then
+         if had_config then
             return res
          else
             return res.exit_code

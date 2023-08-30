@@ -78,6 +78,9 @@ which to build upon. Features which would be too difficult to implement in it's
 current architecture or "features" which are extremely difficult to use are
 left unimplemented.
 
+The usage of `makefile` and `Makefile` files is deprecated (as the languages
+are different) and will be removed in the future.
+
 The syntax implemented from make consists of the following:
 
 ### Comments ###
@@ -97,6 +100,8 @@ executable: main.c math.c \
 graphics.c physics.c serde.c
     cc -o $@ $^
 ```
+
+And:
 
 ```make
 executable: main.c math.c graphics.c physics.c serde.c
@@ -137,7 +142,7 @@ Make][gnu-make]. Specifically:
 - `VAR =` will set a variable. The variable's value is expanded lazily (that
   is, it acts more like a macro than a variable in most other programming
   languages).
-- `VAR :=` and `VAR ::=` set a variable but expand it's content right
+- `VAR :=` and `VAR ::=` set a variable but expand it's contents right
   away. This assigment basically has the same semantics than the normal
   assigment `=` in other programming languages.
 - `VAR ?=` will set `VAR` only if not already set.
