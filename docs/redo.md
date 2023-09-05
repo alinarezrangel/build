@@ -64,8 +64,8 @@ bindings are available:
     the file to build. This function can not be called after the `Redofile.lua`
     has finished executing.
   * `run_wait(program, args, config)`: The `run_wait` function from the [POSIX
-    module](internals.md#run_wait_func). The first parameter (`fs`) is no
-    longer necessary.
+    module](file-systems-posix.md#run_wait_func). The first parameter (`fs`) is
+    no longer necessary.
   * `run(cli)`: `cli` must be a non-empty sequential table. The first element
     will be the program to execute, while remaining ones will be the arguments
     to use. Returns the program's exit code.

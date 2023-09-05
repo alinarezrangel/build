@@ -35,7 +35,8 @@ $(OUTPUTS)/docs/rebuilders-phony-adapter.html									\
 $(OUTPUTS)/docs/traces-verifying-hash.html $(OUTPUTS)/docs/hashers-mtime.html	\
 $(OUTPUTS)/docs/hashers-sha1.html $(OUTPUTS)/docs/hashers-apenwarr.html			\
 $(OUTPUTS)/docs/hashers-combined-clean.html										\
-$(OUTPUTS)/docs/hashers-combined-dirty.html
+$(OUTPUTS)/docs/hashers-combined-dirty.html										\
+$(OUTPUTS)/docs/file-systems-posix.html
 
 .PHONY: all
 all: TAGS all_docs
