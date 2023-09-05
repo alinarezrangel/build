@@ -261,4 +261,28 @@ Available hashers are:
     more hashers, if any of them says the key is dirty then the key is
     considered dirty.
 
+## Systems ##
+
+Module: `build.systems`. Importing `build.systems` is the same as importing
+`build.systems.make`, `build.systems.ninja`, `build.systems.redo` and
+`build.systems.shake`.
+
+For ease of use as an embedded library, some build systems are prebuild. These
+configurations are not as flexible, but if you do not plan on making use of the
+most advanced features of this library and instead only want a Lua library to
+keep things up to date, these are useful:
+
+  * [`build.systems.make`](systems-make.md): *Make*-like system. Builds files
+    by comparing their *mtimes*. Requires all dependencies up-front.
+  * [`build.systems.redo`](systems-redo.md): *Redo*-like system. Builds files
+    by using their [Apenwarr's hash](hashers-apenwarr.md). Discovers
+    dependencies dinamically.
+  * [`build.systems.ninja`](systems-ninja.md): *Ninja*-like system. Builds
+    files by using their [Apenwarr's hash](hashers-apenwarr.md). Requires all
+    dependencies up-front.
+  * `build.systems.shake`: Alias for [`build.systems.redo`](systems-redo.md).
+  * [`build.systems.sha1-redo`](systems-sha1-redo.md): Variant of
+    `build.systems.redo` that uses the SHA1 hash of the files instead of their
+    Apenwarr's hash.
+
 [^1]: Thankfully we don't need to worry about the typechecking issues of higher-order functors, as Lua is dynamically typed.

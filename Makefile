@@ -36,7 +36,9 @@ $(OUTPUTS)/docs/traces-verifying-hash.html $(OUTPUTS)/docs/hashers-mtime.html	\
 $(OUTPUTS)/docs/hashers-sha1.html $(OUTPUTS)/docs/hashers-apenwarr.html			\
 $(OUTPUTS)/docs/hashers-combined-clean.html										\
 $(OUTPUTS)/docs/hashers-combined-dirty.html										\
-$(OUTPUTS)/docs/file-systems-posix.html
+$(OUTPUTS)/docs/file-systems-posix.html $(OUTPUTS)/docs/systems-make.html		\
+$(OUTPUTS)/docs/systems-redo.html $(OUTPUTS)/docs/systems-ninja.html			\
+$(OUTPUTS)/docs/systems-sha1-redo.html
 
 .PHONY: all
 all: TAGS all_docs
