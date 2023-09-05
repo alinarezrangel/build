@@ -10,6 +10,8 @@
 --  4. There are new `*_chunked` (`sha1_chunked`, etc) functions which allow
 --     for hashing of messages with fixed-length but dynamic contents. I
 --     use this to hash files without reading them all into memory.
+--
+-- All changes are under the original license.
 
 local common = {}
 

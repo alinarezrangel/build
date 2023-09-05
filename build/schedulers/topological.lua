@@ -3,12 +3,27 @@ local utils = require "build.utils"
 return function(Store)
    local M = {}
 
+   -- So, in the original paper, they take advantage of Haskell's `Applicative`
+   -- vs `Monad` to get the dependencies of the tasks without running
+   -- them. This is not practical in Lua.
+   --
+   -- So instead I did the uglier option of requiring the `tasks` object of
+   -- this scheduler to not be an actual function, but an special `topotasks`
+   -- object.
+   --
+   -- Clients can construct their own topotasks, which associate each task with
+   -- their dependencies.
+
+   -- Methods of the topotasks object.
    M.METHODS = {}
 
+   -- Return the direct dependencies of `key`.
    function M.METHODS:dependencies_of(key)
       return self.dependencies[key] or {}
    end
 
+   -- Return a list with all the dependencies, even transitive ones, of
+   -- `key`. The returned deps are in topological order.
    function M.METHODS:all_dependencies_in_topological_order(key)
       local deps = {}
       local deps_to_depths = {}
@@ -62,24 +77,36 @@ return function(Store)
 
    M.META = { __index = M.METHODS }
 
+   -- For compatibility, topotasks objects are callable.
    function M.META:__call(...)
       return self.tasks(...)
    end
 
+   -- It is nice to be able to distinguish them...
    function M.META:__tostring()
       return string.format("topotask: (%s)", self.tasks)
    end
 
+   -- Creates a topotasks object.
+   --
+   -- `tasks` is the normal tasks function, that, when called with a key,
+   -- returns the task for that key (or `nil`).
+   --
+   -- `dependencies` is a table mapping each key to a list of their immediate
+   -- dependencies.
    function M.topological_tasks(tasks, dependencies)
       return setmetatable({ tasks = tasks,
                             dependencies = dependencies,
                           }, M.META)
    end
 
+   -- Determines if `tasks` is a topotasks object or a normal tasks function.
    function M.is_topological_tasks(tasks)
       return getmetatable(tasks) == M.META
    end
 
+   -- Utility function that exports the dependency graph of a topotasks object
+   -- to a GraphViz file. `out_file` must be the open output file handle.
    function M.graph_to_graphviz(tasks, out_file)
       assert(M.is_topological_tasks(tasks), "graph_to_graphviz needs a topological graph")
       local cnt = 0
@@ -106,6 +133,17 @@ return function(Store)
       out_file:write "}\n"
    end
 
+   -- Each task returned by the topotasks object is wrapped into a topotask by
+   -- the scheduler.
+   --
+   -- Importantly, the `task:get_dependencies()` method allows each topotask to
+   -- obtain it's own dependencies.
+   --
+   -- The wrapping of each task into a topotask is done by the scheduler and
+   -- not by the topotasks object. This is certainly a design mistake and
+   -- should be fixed.
+
+   -- The methods for a topotask.
    M.TASK_METHODS = {}
 
    function M.TASK_METHODS:get_dependencies()
@@ -113,6 +151,7 @@ return function(Store)
       return metaself.tasks:dependencies_of(metaself.key)
    end
 
+   -- Wraps a task into a topotask. `tasks` is the topotasks object to use.
    local function create_topological_task(tasks, task, key)
       local meta = {
          __index = M.TASK_METHODS,
