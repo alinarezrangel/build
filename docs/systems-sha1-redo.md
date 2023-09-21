@@ -22,11 +22,16 @@ local scheduler = System.create(posix_file_system, metadata_store)
 -- Exports: System.Rebuilder, System.Scheduler, System.Hasher, System.Verifying_Trace_Store
 ```
 
-It provides the same API than the [`build.systems.redo`](systems-redo.md)
-functor.
+It provides the same API as the [`build.systems.redo`](systems-redo.md)
+functor, with the exception that the `System.Hasher` is a
+[`build.hashers.combined-clean`](hashers-combined-clean.md) hasher mixing SHA1
+and Apenwarr's hashers.
 
 ## See also ##
 
+  * [`build.hashers.apenwarr`](hashers-apenwarr.md).
+  * [`build.hashers.sha1`](hashers-sha1.md).
+  * [`build.hashers.combined-clean`](hashers-combined-clean.md).
   * [`build.systems.make`](systems-make.md).
   * [`build.systems.redo`](systems-redo.md).
   * [`build.systems.ninja`](systems-ninja.md).
