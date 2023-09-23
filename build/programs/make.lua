@@ -239,6 +239,22 @@ project, as many modifications were made to the original SHA1 library.
       return table.concat(final)
    end
 
+   local function eval_shell(code)
+      local program = recipe_options.shell[1]
+      local args = {}
+      for i = 2, #recipe_options.shell do
+         args[i - 1] = recipe_options.shell[i]
+      end
+      args[#args + 1] = code
+      local res = Posix_File_System.run_wait(fs, program, args, { capture_stdout = true })
+      assert(res.exit_code == 0, "error while evaluating " .. code)
+      local words = {}
+      for word in string.gmatch(res.stdout, "([^%s]+)") do
+         words[#words + 1] = word
+      end
+      return words
+   end
+
    local function run(key, lines_of_code, dependencies, fetch)
       for i = 1, #lines_of_code do
          local line = lines_of_code[i]
@@ -273,7 +289,7 @@ project, as many modifications were made to the original SHA1 library.
       end
    end
 
-   local recipe = make_dsl.parse_and_prepare(makefile, run)
+   local recipe = make_dsl.parse_and_prepare(makefile, run, eval_shell)
 
    local function get_special_target(name)
       return recipe.dependency_graph["." .. name]

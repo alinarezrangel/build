@@ -339,6 +339,31 @@ src.zip: $(SRCS)
     zip $@ $^
 ```
 
+### Shell Evaluation ###
+
+Backquotes can be used anywhere where a word is expected. The text inside them
+will be evaluated using the current shell (see the `.SHELL` pseudo-target) and
+the result will be used instead.
+
+**NOTE**: Due to autoescaping, this feature is surprisingly difficult to
+implement: most programs meant to generate CLIs (like `pkg-config`) just emit
+shell code to be eval'ed. This does not work with autoescaping and `pkg-config`
+will only works as long as all options are in a single word.
+
+An example of this feature is:
+
+```make
+CC ?= gcc
+CFLAGS = `pkg-config --cflags check`
+LIBS = `pkg-config --libs check`
+
+output/test_%: tests/test_%.c
+    $(CC) $(CFLAGS) -o $@ $< $(LIBS)
+```
+
+**NOTE**: There is no way to escape the backquotes, nor to get the command's
+output without word-splitting.
+
 ### Special variables ###
 
 The following variables are special: they are automatically defined before

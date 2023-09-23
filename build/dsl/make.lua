@@ -185,6 +185,10 @@ local function read_part(src, i)
    if ni then
       return { type = "literal", text = "$" }, ni
    end
+   simple, ni = string.match(src, "^`([^`]*)`()", i)
+   if simple and ni then
+      return { type = "shell", text = simple }, ni
+   end
    local escaped
    escaped, ni = string.match(src, "^\\([\\#:=|])()", i)
    if escaped and ni then
@@ -585,35 +589,37 @@ function M.make_subenv(parent)
    return env
 end
 
-function M.eval_variable(var, env)
+function M.eval_variable(var, env, eval_shell)
    local var = env:get(var.name)
    local value
    if var.components then
-      value = M.eval_components(var.components, env, nil)
+      value = M.eval_components(var.components, env, nil, eval_shell)
    else
       value = assert(var.value)
    end
    return value
 end
 
-function M.eval_part(part, env, pattern)
+function M.eval_part(part, env, pattern, eval_shell)
    local ty = part.type
    if ty == "literal" then
       return true, part.text
    elseif ty == "variable" then
-      return false, M.eval_variable(part, env)
+      return false, M.eval_variable(part, env, eval_shell)
    elseif ty == "file-glob" then
       error("file globbing is not supported")
    elseif ty == "dir-glob" then
       error("directory globbing is not supported")
    elseif ty == "pattern" then
       return true, assert(pattern, "used a pattern, but no pattern was available")
+   elseif ty == "shell" then
+      return false, eval_shell(part.text)
    elseif ty == "string" then
       local res = {}
       for i = 1, #part.parts do
          local p = part.parts[i]
          if p.type == "variable" then
-            local values = M.eval_variable(p, env)
+            local values = M.eval_variable(p, env, eval_shell)
             for j = 1, #values do
                res[#res + 1] = values[j]
             end
@@ -624,18 +630,18 @@ function M.eval_part(part, env, pattern)
       end
       return true, table.concat(res, " ")
    else
-      error("unrechable: " .. ty)
+      error("unreachable: " .. ty)
    end
 end
 
-function M.eval_components(components, env, pattern)
+function M.eval_components(components, env, pattern, eval_shell)
    local res = {}
    for i = 1, #components do
       local comp = components[i]
       local acc = {""}
       for j = 1, #comp.parts do
          local part = comp.parts[j]
-         local is_scalar, val = M.eval_part(part, env, pattern)
+         local is_scalar, val = M.eval_part(part, env, pattern, eval_shell)
          if not is_scalar then
             local mult = {}
             for k = 1, #acc do
@@ -671,7 +677,7 @@ local function pattern_match(self, text)
    return string.sub(text, string.len(self.prefix) + 1, -string.len(self.suffix) - 1)
 end
 
-function M.pattern_extract(component, env)
+function M.pattern_extract(component, env, eval_shell)
    local prefix_parts, suffix_parts, pos = {}, {}, nil
    for i = 1, #component.parts do
       local part = component.parts[i]
@@ -684,8 +690,8 @@ function M.pattern_extract(component, env)
          suffix_parts[#suffix_parts + 1] = part
       end
    end
-   local prefix = M.eval_components({{parts = prefix_parts}}, env, nil)
-   local suffix = M.eval_components({{parts = suffix_parts}}, env, nil)
+   local prefix = M.eval_components({{parts = prefix_parts}}, env, nil, eval_shell)
+   local suffix = M.eval_components({{parts = suffix_parts}}, env, nil, eval_shell)
    local matchers = {}
    for i = 1, #prefix do
       for j = 1, #suffix do
@@ -699,7 +705,7 @@ function M.pattern_extract(component, env)
    return not not pos, matchers
 end
 
-function M.eval_make(ast, env, run)
+function M.eval_make(ast, env, run, eval_shell)
    local graph = {}
    local tasks = {}
    local codes = {}
@@ -712,9 +718,9 @@ function M.eval_make(ast, env, run)
       if ty == "task" then
          local header = child.header
          local target, deps, order_only = nil, {}, {}
-         local has_pattern, matchers = M.pattern_extract(header.target, env)
+         local has_pattern, matchers = M.pattern_extract(header.target, env, eval_shell)
          local function get_dependencies(key, pattern)
-            return M.eval_components(header.dependencies, env, pattern)
+            return M.eval_components(header.dependencies, env, pattern, eval_shell)
          end
 
          local idx
@@ -749,7 +755,7 @@ function M.eval_make(ast, env, run)
          end
          local value
          if child.immediate then
-            value = { value = M.eval_components(child.expression_list, env, nil) }
+            value = { value = M.eval_components(child.expression_list, env, nil, eval_shell) }
          else
             value = { components = child.expression_list }
          end
@@ -799,7 +805,7 @@ function M.eval_make(ast, env, run)
                   expanded[#expanded + 1] = el.literal
                else
                   assert(el.variable)
-                  expanded[#expanded + 1] = M.eval_variable(el.variable, subenv)
+                  expanded[#expanded + 1] = M.eval_variable(el.variable, subenv, eval_shell)
                end
             end
             expanded_lines[#expanded_lines + 1] = expanded
@@ -909,13 +915,13 @@ function M.dependencies_function_to_graph(dependencies_of)
    return setmetatable({}, { __index = index })
 end
 
-function M.parse_and_prepare(code, run)
+function M.parse_and_prepare(code, run, eval_shell)
    local osenv = M.make_subenv(M.make_os_env())
    local ast, errmsg = M.parse_string(code)
    if not ast then
       error(errmsg)
    end
-   local tasks, dependencies_of = M.eval_make(ast, osenv, run)
+   local tasks, dependencies_of = M.eval_make(ast, osenv, run, eval_shell)
    local graph = M.dependencies_function_to_graph(dependencies_of)
    return {
       ast = ast,
