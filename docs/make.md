@@ -364,6 +364,36 @@ output/test_%: tests/test_%.c
 **NOTE**: There is no way to escape the backquotes, nor to get the command's
 output without word-splitting.
 
+### Includes ###
+
+A single line like:
+
+```make
+include filenames...
+```
+
+Will include all the *`filenames`...* into the current file. Variables defined
+will overwrite those that already exist, while the targets of both the current
+and referenced files are combined. Each `filename` is a word, and, as such, can
+include all the mentioned word-syntax, such as cartesian expansion, sub-shells,
+etc.
+
+A common example of this is including a `config.mk` file with some common
+variables meant to be changed by the user:
+
+```make
+include config.mk
+```
+
+You could even include a different `config.autogen.mk` which was automatically
+generated! Of course, you would include it before the user's `config.mk` so
+that if the user explicitly sets any option, it overrides the automatically
+generated one:
+
+```make
+include config.autogen.mk config.mk
+```
+
 ### Special variables ###
 
 The following variables are special: they are automatically defined before

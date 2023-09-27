@@ -289,7 +289,7 @@ project, as many modifications were made to the original SHA1 library.
       end
    end
 
-   local recipe = make_dsl.parse_and_prepare(makefile, run, eval_shell)
+   local recipe = make_dsl.parse_and_prepare(makefile, run, eval_shell, read_file)
 
    local function get_special_target(name)
       return recipe.dependency_graph["." .. name]

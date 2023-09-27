@@ -288,6 +288,34 @@ local function read_task_header(src, i)
    }, i
 end
 
+local function read_components(src, i, whatami)
+   local values = {}
+   while true do
+      i = skip_ws(src, i)
+      if at_eof_or_nl(src, i) then
+         break
+      end
+      local value
+      value, ni, errmsg = read_component(src, i)
+      if not value or not ni then
+         return nil, ni or i, "Could not read values of " .. whatami .. ": " .. errmsg
+      end
+      i = ni
+      values[#values + 1] = value
+   end
+
+   i = skip_ws(src, i)
+   if i > string.len(src) then
+      return nil, i, "Expected newline ending the " .. whatami .. " but got EOF"
+   elseif string.sub(src, i, i) ~= "\n" then
+      return nil, i, string.format("Expected newline ending but got: %q",
+                                   string.sub(src, i, i))
+   end
+   i = i + 1
+
+   return values, i
+end
+
 local function read_variable_assigment(src, i)
    local name, ni, errmsg = read_variable_name(src, i)
    if not name or not ni then
@@ -309,29 +337,13 @@ local function read_variable_assigment(src, i)
    else
       return nil, i, "Expected assignment operator `=`, `:=`, `::=` or `?=`"
    end
-   local values = {}
-   while true do
-      i = skip_ws(src, i)
-      if at_eof_or_nl(src, i) then
-         break
-      end
-      local value
-      value, ni, errmsg = read_component(src, i)
-      if not value or not ni then
-         return nil, ni or i, "Could not read value of variable: " .. errmsg
-      end
-      i = ni
-      values[#values + 1] = value
-   end
 
-   i = skip_ws(src, i)
-   if i > string.len(src) then
-      return nil, i, "Expected newline ending the assigment but got EOF"
-   elseif string.sub(src, i, i) ~= "\n" then
-      return nil, i, string.format("Expected newline ending but got: %q",
-                                   string.sub(src, i, i))
+   local values = {}
+   values, ni, errmsg = read_components(src, i, "variable assigment")
+   if not values then
+      return nil, i, errmsg
    end
-   i = i + 1
+   i = ni
 
    return {
       type = "assigment",
@@ -339,6 +351,26 @@ local function read_variable_assigment(src, i)
       immediate = immediate,
       target = name,
       expression_list = values,
+   }, i
+end
+
+local function read_include(src, i)
+   local ni = string.match(src, "^include%s+()", i)
+   if not ni then
+      return nil, "expected 'include' keyword"
+   end
+   i = ni
+
+   local values = {}
+   values, ni, errmsg = read_components(src, i, "include directive")
+   if not values then
+      return nil, i, errmsg
+   end
+   i = ni
+
+   return {
+      type = "include",
+      filenames = values,
    }, i
 end
 
@@ -478,12 +510,20 @@ local function read_makefile(src, i)
             i = ni_2
             table.insert(children, task)
          else
-            return nil, i,
-               string.format("Expected assigment: %s %s\n         or a task: %s %s",
-                             M.srcloc_to_string(pos_to_srcloc(src, ni_1)),
-                             errmsg_1,
-                             M.srcloc_to_string(pos_to_srcloc(src, ni_2)),
-                             errmsg_2)
+            local include, ni_3, errmsg_3 = read_include(src, i)
+            if include and ni_3 then
+               i = ni_3
+               table.insert(children, include)
+            else
+               return nil, i,
+                  string.format("Expected assigment: %s %s\n         or a task: %s %s\n         or an include: %s %s",
+                                M.srcloc_to_string(pos_to_srcloc(src, ni_1)),
+                                errmsg_1,
+                                M.srcloc_to_string(pos_to_srcloc(src, ni_2)),
+                                errmsg_2,
+                                M.srcloc_to_string(pos_to_srcloc(src, ni_3)),
+                                errmsg_3)
+            end
          end
       end
    end
@@ -705,67 +745,76 @@ function M.pattern_extract(component, env, eval_shell)
    return not not pos, matchers
 end
 
-function M.eval_make(ast, env, run, eval_shell)
+function M.eval_make(ast, env, run, eval_shell, include_ast)
    local graph = {}
    local tasks = {}
    local codes = {}
    local targets = {}
    local recipes = {}
 
-   for i = 1, #ast.children do
-      local child = ast.children[i]
-      local ty = child.type
-      if ty == "task" then
-         local header = child.header
-         local target, deps, order_only = nil, {}, {}
-         local has_pattern, matchers = M.pattern_extract(header.target, env, eval_shell)
-         local function get_dependencies(key, pattern)
-            return M.eval_components(header.dependencies, env, pattern, eval_shell)
-         end
-
-         local idx
-         if has_pattern then
-            idx = #targets + 1
-         else
-            idx = 1
-         end
-
-         local function task(key)
-            for i = 1, #matchers do
-               local pattern = matchers[i]:pattern_match(key)
-               if pattern and (has_pattern or pattern == "") then
-                  if not has_pattern then
-                     pattern = nil
-                  end
-                  return {
-                     pattern = pattern,
-                     dependencies = get_dependencies(key, pattern),
-                     ast = child,
-                     codes = child.body,
-                  }
-               end
+   local function apply_ast(ast)
+      for i = 1, #ast.children do
+         local child = ast.children[i]
+         local ty = child.type
+         if ty == "task" then
+            local header = child.header
+            local target, deps, order_only = nil, {}, {}
+            local has_pattern, matchers = M.pattern_extract(header.target, env, eval_shell)
+            local function get_dependencies(key, pattern)
+               return M.eval_components(header.dependencies, env, pattern, eval_shell)
             end
-            return nil
-         end
 
-         table.insert(targets, idx, task)
-      elseif ty == "assigment" then
-         if child.override then
-            env:new(child.target)
-         end
-         local value
-         if child.immediate then
-            value = { value = M.eval_components(child.expression_list, env, nil, eval_shell) }
+            local idx
+            if has_pattern then
+               idx = #targets + 1
+            else
+               idx = 1
+            end
+
+            local function task(key)
+               for i = 1, #matchers do
+                  local pattern = matchers[i]:pattern_match(key)
+                  if pattern and (has_pattern or pattern == "") then
+                     if not has_pattern then
+                        pattern = nil
+                     end
+                     return {
+                        pattern = pattern,
+                        dependencies = get_dependencies(key, pattern),
+                        ast = child,
+                        codes = child.body,
+                     }
+                  end
+               end
+               return nil
+            end
+
+            table.insert(targets, idx, task)
+         elseif ty == "assigment" then
+            if child.override then
+               env:new(child.target)
+            end
+            local value
+            if child.immediate then
+               value = { value = M.eval_components(child.expression_list, env, nil, eval_shell) }
+            else
+               value = { components = child.expression_list }
+            end
+            if child.override or not env:has(child.target) then
+               env:set(child.target, value)
+            end
+         elseif ty == "include" then
+            local values = M.eval_components(child.filenames, env, nil, eval_shell)
+            for j = 1, #values do
+               apply_ast(include_ast(values[j]))
+            end
          else
-            value = { components = child.expression_list }
+            error("unreachable: " .. ty)
          end
-         if child.override or not env:has(child.target) then
-            env:set(child.target, value)
-         end
-      else
-         error("unreachable: " .. ty)
       end
    end
+
+   apply_ast(ast)
 
    local function make_subenv(env, key, deps)
       local subenv = M.make_subenv(env)
@@ -915,13 +964,22 @@ function M.dependencies_function_to_graph(dependencies_of)
    return setmetatable({}, { __index = index })
 end
 
-function M.parse_and_prepare(code, run, eval_shell)
+function M.parse_and_prepare(code, run, eval_shell, read_file)
    local osenv = M.make_subenv(M.make_os_env())
    local ast, errmsg = M.parse_string(code)
    if not ast then
       error(errmsg)
    end
-   local tasks, dependencies_of = M.eval_make(ast, osenv, run, eval_shell)
+
+   local function include_ast(filename)
+      local ast, errmsg = M.parse_string(read_file(filename))
+      if not ast then
+         error(errmsg)
+      end
+      return ast
+   end
+
+   local tasks, dependencies_of = M.eval_make(ast, osenv, run, eval_shell, include_ast)
    local graph = M.dependencies_function_to_graph(dependencies_of)
    return {
       ast = ast,
