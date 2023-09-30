@@ -357,7 +357,7 @@ end
 local function read_include(src, i)
    local ni = string.match(src, "^include%s+()", i)
    if not ni then
-      return nil, "expected 'include' keyword"
+      return nil, i, "expected 'include' keyword"
    end
    i = ni
 
@@ -537,7 +537,7 @@ end
 local function read_full_makefile(src, i)
    local ast, ni, errmsg = read_makefile(src, i)
    i = ni or i
-   if i <= string.len(src) then
+   if not ast or i <= string.len(src) then
       return nil, i, errmsg or "Could not parse the whole file"
    else
       return ast, i
