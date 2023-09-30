@@ -500,6 +500,10 @@ local function read_makefile(src, i)
    local children = {}
    while i <= string.len(src) do
       i = skip_nls(src, i)
+      if i > string.len(src) then
+         -- The entire makefile was whitespace / comments.
+         break
+      end
       local assigment, ni_1, errmsg_1 = read_variable_assigment(src, i)
       if assigment and ni_1 then
          i = ni_1
